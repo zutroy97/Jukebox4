@@ -3,6 +3,7 @@ from jukebox.coordinator.display_coordinator import DisplayCoordinator
 from jukebox.displays.example_display import ExampleDisplay
 
 import asyncio
+
 async def wait_and_stop(coor: DisplayCoordinator, delay: float) -> None:
     coor.artist = "Nirvana"
     coor.title = "Smells Like Teen Spirit"
@@ -16,15 +17,22 @@ async def wait_and_stop(coor: DisplayCoordinator, delay: float) -> None:
     coor.artist = "John Willams"
     coor.title = "Star Wars Theme"
     await asyncio.sleep(delay)  
+    coor.Die()
 
-if __name__ == "__main__":
+async def main():
     logging.basicConfig(level=logging.DEBUG)
     subject = DisplayCoordinator()
     example = ExampleDisplay()
     subject.add_observer(example)
+    async with asyncio.TaskGroup() as tg:
+        task1 = tg.create_task(
+            #task_exercise("display1", display)
+            example.loop()
+        )
+        taskStop = tg.create_task(
+            wait_and_stop(subject, 6)   
+        )
 
-    # subject.title = "New Song Title"
-    # subject.artist = "New Artist Name"
-    # subject.notify_observers("Manual notification without event")
-    asyncio.run(wait_and_stop(subject, 2))
-
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+    asyncio.run(main())
