@@ -1,6 +1,6 @@
 import logging
 from jukebox.coordinator.display_coordinator import DisplayCoordinator
-from jukebox.displays.example_display import ExampleDisplay
+from jukebox.displays.example_display import ExampleDisplay, ConsoleCursesDisplay
 
 import asyncio
 
@@ -22,12 +22,17 @@ async def wait_and_stop(coor: DisplayCoordinator, delay: float) -> None:
 async def main():
     logging.basicConfig(level=logging.DEBUG)
     subject = DisplayCoordinator()
-    example = ExampleDisplay()
-    subject.add_observer(example)
+    # example = ExampleDisplay()
+    # subject.add_observer(example)
+    console = ConsoleCursesDisplay()
+    subject.add_observer(console)
     async with asyncio.TaskGroup() as tg:
-        task1 = tg.create_task(
-            #task_exercise("display1", display)
-            example.loop()
+        # task1 = tg.create_task(
+        #     #task_exercise("display1", display)
+        #     example.loop()
+        # )
+        task2 = tg.create_task(
+            console.loop()
         )
         taskStop = tg.create_task(
             wait_and_stop(subject, 6)   
