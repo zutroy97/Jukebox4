@@ -1,6 +1,7 @@
 import logging
 from jukebox.coordinator.change_events import ChangeEvents
 import asyncio
+from ctypes import c_uint64 as uint64 
 
 class DisplayCoordinator:
     def __init__(self):
@@ -46,9 +47,10 @@ class DisplayCoordinator:
 
 class DisplayObserver:
     def __init__(self) -> None:
-        self._title = ""
-        self._artist = ""
-        self._running = False
+        self._title :str = ""
+        self._artist: str  = ""
+        self._running : bool = False
+        self._ticks : uint64 = uint64(0)
     
     async def draw(self) -> None:
         pass
@@ -62,17 +64,19 @@ class DisplayObserver:
         while self._running:
             await self.draw()
             await asyncio.sleep(0.010)
+            self._ticks.value += 1
 
     def update(self, observable, *args, **kwargs):
         if 'event' in kwargs:
             event = kwargs['event']
+            value = kwargs.get('value', '')
             if event == ChangeEvents.DIE:
                 self._running = False
             elif event == ChangeEvents.TITLE_CHANGED:
-                self._title = kwargs.get('value')
+                self._title = value
                 self.title_updated()
             elif event == ChangeEvents.ARTIST_CHANGED:
-                self._artist = kwargs.get('value')
+                self._artist = value
                 self.artist_updated()
 
 

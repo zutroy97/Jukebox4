@@ -15,10 +15,5 @@ class ExampleDisplay(DisplayObserver):
         self._logger.info(f"Artist updated to: {self._artist}")
     
     async def draw(self) -> None:
-        while self._running:
-            if self._artist:
-                self._logger.debug(f"Artist: {self._artist}")
-            await asyncio.sleep(2)
-            if self._title:
-                self._logger.debug(f"Title: {self._title}")
-            await asyncio.sleep(2)
+        pass
+
