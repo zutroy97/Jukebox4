@@ -1,6 +1,6 @@
 from enum import Enum
 
-class DisplayStates(Enum):
+class DisplayStateMachineState(Enum):
     IDLE = 0
     """Not doing anything."""
     INIT = 1
@@ -16,3 +16,11 @@ class DisplayStates(Enum):
     FINISHED = 6
     """Finished displaying text (and any animation)."""
 
+
+class DisplayInfoState(Enum):
+    IDLE = 0
+    """Not doing anything."""
+    DRAWING_ARTIST = 1
+    """Drawing artist text."""
+    DRAWING_TITLE = 2
+    """Drawing title text."""
