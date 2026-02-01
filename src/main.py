@@ -36,7 +36,7 @@ async def main():
         #     console.loop()
         # )
         taskStop = tg.create_task(
-            wait_and_stop(subject, 6)   
+            wait_and_stop(subject, 10)   
         )
 
 if __name__ == "__main__":

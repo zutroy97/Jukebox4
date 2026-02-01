@@ -28,7 +28,7 @@ class ConsoleDisplayBase(DisplayObserverBase):
     #         self.done = False
 
 
-    def __init__(self, min_dwell_ticks: int = 200) -> None:
+    def __init__(self, max_dwell_ticks: int = 500) -> None:
         super().__init__()
         self._logger = logging.getLogger(__class__.__name__)
         self._running = True
@@ -36,7 +36,8 @@ class ConsoleDisplayBase(DisplayObserverBase):
         self._stateTitle = DisplayStateMachineState.IDLE
         self._alarmTicks = uint64(0)
         self._displayState = DisplayInfoState.DRAWING_ARTIST
-        self._minDwellTicks = min_dwell_ticks
+        self._minDwellTicks = max_dwell_ticks
+        self._moveNextDisplayStart : bool = False
 
     def title_updated(self) -> None:
         self._stateTitle = DisplayStateMachineState.TEXT_UPDATED
@@ -45,8 +46,9 @@ class ConsoleDisplayBase(DisplayObserverBase):
     
     async def draw(self) -> None:
         #self._logger.debug(f"Ticks: {self._ticks.value} AlarmTicks: {self._alarmTicks.value}")
-        if (self._ticks.value >= self._alarmTicks.value):
+        if (self._ticks.value >= self._alarmTicks.value or self._moveNextDisplayStart == True):
             self._alarmTicks.value = self._ticks.value + self._minDwellTicks
+            self._moveNextDisplayStart = False
             if self._displayState == DisplayInfoState.DRAWING_ARTIST:
                 self._displayState = DisplayInfoState.DRAWING_TITLE
                 self._stateArtist = DisplayStateMachineState.INIT
@@ -57,9 +59,13 @@ class ConsoleDisplayBase(DisplayObserverBase):
 
         if self._displayState == DisplayInfoState.DRAWING_ARTIST:
             self._stateArtist = self._drawText("Artist", self._artist, self._stateArtist)
+            if self._stateArtist == DisplayStateMachineState.FINISHED:
+                self._moveNextDisplayStart = True
             
         elif self._displayState == DisplayInfoState.DRAWING_TITLE:
             self._stateTitle = self._drawText("Title", self._title, self._stateTitle)
+            if self._stateTitle == DisplayStateMachineState.FINISHED:
+                self._moveNextDisplayStart = True
             pass
 
     def _drawText(self, header: str, text: str, state: DisplayStateMachineState) -> DisplayStateMachineState:
