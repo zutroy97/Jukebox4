@@ -2,6 +2,7 @@ import logging
 from jukebox.coordinator.display_coordinator import DisplayCoordinator
 from jukebox.displays.console.simple_console_display import SimpleConsoleDisplay
 from jukebox.displays.console.console_scrolling_width import ConsoleScrollingWidth
+from jukebox.displays.console.console_left_building import ConsoleLeftBuilding
 
 import asyncio
 
@@ -23,14 +24,17 @@ async def wait_and_stop(coor: DisplayCoordinator, delay: float) -> None:
 async def main():
     logging.basicConfig(level=logging.DEBUG)
     subject = DisplayCoordinator()
-    consoleScrollWidth = ConsoleScrollingWidth(scroll_width=12)
-    subject.add_observer(consoleScrollWidth)
+    # consoleScrollWidth = ConsoleScrollingWidth(scroll_width=12)
+    # subject.add_observer(consoleScrollWidth)
     # console = SimpleConsoleDisplay()
     # subject.add_observer(console)
+    consoleLeftBuild = ConsoleLeftBuilding()
+    subject.add_observer(consoleLeftBuild)
     async with asyncio.TaskGroup() as tg:
         task1 = tg.create_task(
             #task_exercise("display1", display)
-            consoleScrollWidth.loop()
+            #consoleScrollWidth.loop()
+            consoleLeftBuild.loop()
         )
         # task2 = tg.create_task(
         #     console.loop()

@@ -3,6 +3,7 @@ from jukebox.coordinator.change_events import ChangeEvents
 from jukebox.displays.display_observer_base import DisplayObserverBase
 
 class SimpleConsoleDisplay(DisplayObserverBase):
+    '''Just prints when the artist or title is updated.'''
     def __init__(self) -> None:
         super().__init__()
         self._logger = logging.getLogger(__class__.__name__)

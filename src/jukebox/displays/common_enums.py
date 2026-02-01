@@ -15,6 +15,7 @@ class DisplayStateMachineState(Enum):
     """No text to display."""
     FINISHED = 6
     """Finished displaying text (and any animation)."""
+    END_ANIMATION = 7
 
 
 class DisplayInfoState(Enum):

@@ -39,7 +39,6 @@ class ConsoleScrollingWidth(ConsoleDisplayBase):
                 # Nothing to display, Nothing to do
                 return DisplayStateMachineState.EMPTY
             self._animator = self.StringRepeatScrollAnimator(f"{header}: {text}", width=self._scroll_width)
-            
             return DisplayStateMachineState.BEGIN_ANIMATION
         elif state == DisplayStateMachineState.EMPTY:
             return DisplayStateMachineState.FINISHED

@@ -8,26 +8,6 @@ from ctypes import c_uint64 as uint64
 
 
 class ConsoleDisplayBase(DisplayObserverBase):
-
-    # class StringFlyingFromLeftAnimator:
-    #     def __init__(self, text: str) -> None:
-    #         self.text = text
-    #         self.done : bool = False
-    #         self.position = 0
-
-    #     def next(self) -> str:
-    #         if self.done:
-    #             return ''
-    #         display_text = self.text[0:self.position]
-    #         self.position = self.position + 1
-    #         if self.position > len(self.text):
-    #             self.done = True
-    #         return display_text
-    #     def reset(self) -> None:
-    #         self.position = 0
-    #         self.done = False
-
-
     def __init__(self, max_dwell_ticks: int = 500) -> None:
         super().__init__()
         self._logger = logging.getLogger(__class__.__name__)
