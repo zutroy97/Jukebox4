@@ -23,7 +23,13 @@ class ConsoleDisplayBase(DisplayObserverBase):
         self._stateTitle = DisplayStateMachineState.TEXT_UPDATED
     def artist_updated(self) -> None:
         self._stateArtist = DisplayStateMachineState.TEXT_UPDATED
-    
+    def __del__(self):
+        super().__del__()
+        self.clear_screen()
+
+    def clear_screen(self):
+        print("\033[H\033[2J", end="")  # Clear console
+        
     async def draw(self) -> None:
         #self._logger.debug(f"Ticks: {self._ticks.value} AlarmTicks: {self._alarmTicks.value}")
         if (self._ticks.value >= self._alarmTicks.value or self._moveNextDisplayStart == True):

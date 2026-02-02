@@ -17,6 +17,9 @@ class DisplayObserverBase:
     def artist_updated(self) -> None:
         pass
 
+    def __del__(self):
+        pass # subclasses to define
+
     async def loop(self) -> None:
         while self._running:
             await self.draw()

@@ -1,8 +1,9 @@
 import logging
 from jukebox.coordinator.display_coordinator import DisplayCoordinator
-from jukebox.displays.console.simple_console_display import SimpleConsoleDisplay
+from jukebox.displays.console.console_simple_display import SimpleConsoleDisplay
 from jukebox.displays.console.console_scrolling_width import ConsoleScrollingWidth
 from jukebox.displays.console.console_left_building import ConsoleLeftBuilding
+from jukebox.displays.console.random_width_fill import RandomTypewriter
 
 import asyncio
 
@@ -28,13 +29,16 @@ async def main():
     # subject.add_observer(consoleScrollWidth)
     # console = SimpleConsoleDisplay()
     # subject.add_observer(console)
-    consoleLeftBuild = ConsoleLeftBuilding()
-    subject.add_observer(consoleLeftBuild)
+    # consoleLeftBuild = ConsoleLeftBuilding()
+    # subject.add_observer(consoleLeftBuild)
+    randomWidthFill = RandomTypewriter()
+    subject.add_observer(randomWidthFill)
     async with asyncio.TaskGroup() as tg:
         task1 = tg.create_task(
             #task_exercise("display1", display)
             #consoleScrollWidth.loop()
-            consoleLeftBuild.loop()
+            #consoleLeftBuild.loop()
+            randomWidthFill.loop()
         )
         # task2 = tg.create_task(
         #     console.loop()
