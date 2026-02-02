@@ -31,7 +31,7 @@ async def main():
     # subject.add_observer(console)
     # consoleLeftBuild = ConsoleLeftBuilding()
     # subject.add_observer(consoleLeftBuild)
-    randomWidthFill = RandomTypewriter(scroll_width=12)
+    randomWidthFill = RandomTypewriter(max_text_width=12)
     subject.add_observer(randomWidthFill)
     async with asyncio.TaskGroup() as tg:
         task1 = tg.create_task(

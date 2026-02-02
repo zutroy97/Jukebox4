@@ -28,24 +28,20 @@ class RandomTypewriter(ConsoleDisplayBase):
                 self.done = True
             return ''.join(self._rendered)
 
-    def __init__(self, scroll_width : int = 80) -> None:
+    def __init__(self, max_text_width : int = 80) -> None:
         super().__init__()
-        self._scroll_width = scroll_width
+        self._max_text_width = max_text_width
 
     def _drawText(self, header: str, text: str, state: DisplayStateMachineState) -> DisplayStateMachineState: # returns true when fully drawn (text scrolled/fully displayed)
         if state == DisplayStateMachineState.INIT or state == DisplayStateMachineState.TEXT_UPDATED:
             if text == "":
                 # Nothing to display, Nothing to do
-                return DisplayStateMachineState.EMPTY
-            self._lines = textwrap.wrap(text, width=self._scroll_width, expand_tabs=False)
+                return DisplayStateMachineState.FINISHED
+            self._lines = textwrap.wrap(text, width=self._max_text_width, expand_tabs=False)
             self._animator = self.Animator(text=self._lines.pop(0))
             self.__drawTextNextTick = uint64(0)
             self._header = header.strip()
             return DisplayStateMachineState.LOOP
-        elif state == DisplayStateMachineState.EMPTY:
-            return DisplayStateMachineState.FINISHED
-        elif state == DisplayStateMachineState.FINISHED:
-            return DisplayStateMachineState.IDLE
         elif state == DisplayStateMachineState.LOOP:
             if (self._ticks.value > self.__drawTextNextTick.value):
                 self._animateFrame(5)
@@ -65,6 +61,7 @@ class RandomTypewriter(ConsoleDisplayBase):
         animated_text = self._animator.next()
         self.clear_screen()
         print(f"{self._header}:")
+        print('-' * self._max_text_width)
         print(animated_text)
         self.__drawTextNextTick.value = self._ticks.value + wait_ticks # wait this many clicks before scrolling the line
 
