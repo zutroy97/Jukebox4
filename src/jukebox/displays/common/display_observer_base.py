@@ -23,7 +23,7 @@ class DisplayObserverBase:
     async def loop(self) -> None:
         while self._running:
             await self.draw()
-            await asyncio.sleep(0.010)
+            await asyncio.sleep(0.001)
             self._ticks.value += 1
 
     def update(self, observable, *args, **kwargs):

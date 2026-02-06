@@ -1,5 +1,5 @@
 import logging
-from jukebox.displays.common_enums import  DisplayStateMachineState
+from jukebox.displays.common.common_enums import  DisplayStateMachineState
 from jukebox.displays.console.console_display_base import ConsoleDisplayBase
 
 from ctypes import c_uint64 as uint64 
