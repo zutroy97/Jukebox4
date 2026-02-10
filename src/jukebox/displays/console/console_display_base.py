@@ -1,6 +1,5 @@
 import logging
 from jukebox.coordinator.change_events import ChangeEvents
-from jukebox.displays.common.display_observer_base import DisplayObserverBase
 import asyncio
 from jukebox.displays.common.common_enums import  DisplayStateMachineState, DisplayInfoState
 from jukebox.displays.common.display_base import DisplayBase

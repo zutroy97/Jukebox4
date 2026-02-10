@@ -25,3 +25,8 @@ class DisplayInfoState(Enum):
     """Drawing artist text."""
     DRAWING_TITLE = 2
     """Drawing title text."""
+
+class DisplayInfoTypes(Enum):
+    UNKNOWN = 0
+    SONG_ARTIST = 1
+    SONG_TITLE = 2
