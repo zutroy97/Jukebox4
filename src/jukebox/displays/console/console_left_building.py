@@ -17,12 +17,12 @@ class ConsoleLeftBuilding(ConsoleDisplayBase):
                 return DisplayStateMachineState.EMPTY
             self._text = f"{header}: {text}"
             self.__drawTextNextTick = uint64(0)
-            return DisplayStateMachineState.LOOP
+            return DisplayStateMachineState.ANIMATING
         elif state == DisplayStateMachineState.EMPTY:
             return DisplayStateMachineState.FINISHED
         elif state == DisplayStateMachineState.FINISHED:
             return DisplayStateMachineState.IDLE
-        elif state == DisplayStateMachineState.LOOP:
+        elif state == DisplayStateMachineState.ANIMATING:
             #self._logger.debug("in loop")
             self._animateFrame(10)
             if self._index > len(self._text):

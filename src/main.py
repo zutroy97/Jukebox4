@@ -8,7 +8,7 @@ from jukebox.coordinator.display_coordinator import DisplayCoordinator
 #from typing import Dict, List, Optional, Tuple, Union
 import asyncio
 
-from jukebox.displays.common.display_base import DisplaySimpleConsole
+from jukebox.displays.common.display_base import DisplaySimpleConsole, DisplayConsoleRandomTypewriter
 
 
 async def wait_and_stop(coor: DisplayCoordinator, delay: float) -> None:
@@ -33,7 +33,8 @@ async def main():
     logging.basicConfig(level=logging.DEBUG)
 
     subject = DisplayCoordinator()
-    display = DisplaySimpleConsole()
+    #display = DisplaySimpleConsole()
+    display = DisplayConsoleRandomTypewriter()
     subject.add_observer(display)
     async with asyncio.TaskGroup() as tg:
         task1 = tg.create_task(

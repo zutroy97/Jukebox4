@@ -5,7 +5,7 @@ class DisplayStateMachineState(Enum):
     """Not doing anything."""
     INIT = 1
     """Initializing display with new text."""
-    LOOP = 2
+    ANIMATING = 2
     """Main loop for display updates."""
     TEXT_UPDATED = 3 
     """Text has been updated and needs to be redrawn."""

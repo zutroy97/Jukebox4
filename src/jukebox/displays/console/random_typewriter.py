@@ -25,8 +25,8 @@ class RandomTypewriter(DisplayBase):
             self._animator = self.Animator(text=self._lines.pop(0))
             self._drawTextNextTick = uint64(0)
             self._header = header.strip()
-            return DisplayStateMachineState.LOOP
-        elif state == DisplayStateMachineState.LOOP:
+            return DisplayStateMachineState.ANIMATING
+        elif state == DisplayStateMachineState.ANIMATING:
             if (self._ticks.value > self._drawTextNextTick.value):
                 self._renderer.DrawFrame(header=header, value=self._animator.next(), display=self)
                 self._drawTextNextTick.value = self._ticks.value + 5 # wait this many clicks before scrolling the line

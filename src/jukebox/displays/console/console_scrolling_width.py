@@ -47,8 +47,8 @@ class ConsoleScrollingWidth(ConsoleDisplayBase):
         elif state == DisplayStateMachineState.BEGIN_ANIMATION:
             self.__drawTextNextTick = uint64(0)
             self._animateFrame(75)
-            return DisplayStateMachineState.LOOP
-        elif state == DisplayStateMachineState.LOOP:
+            return DisplayStateMachineState.ANIMATING
+        elif state == DisplayStateMachineState.ANIMATING:
             if (self._ticks.value > self.__drawTextNextTick.value):
                 self._animateFrame(10)
                 if self._animator.done:

@@ -3,7 +3,7 @@ from jukebox.coordinator.change_events import ChangeEvents
 from jukebox.displays.common.common_enums import  DisplayStateMachineState, DisplayInfoState, DisplayInfoTypes
 from abc import ABC, abstractmethod
 from ctypes import c_uint64 as uint64 
-from jukebox.animators.random_typewriter import Animator
+from jukebox.animators.random_typewriter import RandomTypeWriter
 
 class DisplayBase(ABC):
     def __init__(self, **kwargs ) -> None:
@@ -24,7 +24,7 @@ class DisplayBase(ABC):
         self.max_widths = {}
         self.max_widths[DisplayInfoTypes.SONG_TITLE] = kwargs.get('max_song_title_width',80)
         self.max_widths[DisplayInfoTypes.SONG_ARTIST] = kwargs.get('max_song_artist_width',80)
-        self._song_artist_animator : Animator 
+        #self._song_artist_animator : Animator 
 
     @property
     def max_text_width(self) -> int:
@@ -38,9 +38,9 @@ class DisplayBase(ABC):
     def artist(self) -> str:
         return self._artist
     
-    def set_song_artist_animator(self, ani : Animator) -> None:
-        self._stateArtist = DisplayStateMachineState.INIT
-        self._song_artist_animator = ani
+    # def set_song_artist_animator(self, ani : Animator) -> None:
+    #     self._stateArtist = DisplayStateMachineState.INIT
+    #     self._song_artist_animator = ani
     
     def song_title_updated(self) -> None:
         self._alarmTicks.value = self._ticks.value + self._minDwellTicks
@@ -50,6 +50,7 @@ class DisplayBase(ABC):
         self._stateArtist = DisplayStateMachineState.TEXT_UPDATED
 
     def update(self, **kwargs):
+        '''Receives updates from the DisplayCoordinator. Subclasses can override this method to handle specific events.'''
         if 'event' in kwargs:
             event = kwargs.get('event', ChangeEvents.UNKOWN)
             value = kwargs.get('value', '')
@@ -85,15 +86,13 @@ class DisplayBase(ABC):
         self._updateDisplay()
 
         if self._displayState == DisplayInfoState.DRAWING_ARTIST:
-            if self._song_artist_animator is not None:
             if self._stateArtist == DisplayStateMachineState.FINISHED:
                 self._moveNextDisplayStart = True
-            
         elif self._displayState == DisplayInfoState.DRAWING_TITLE:
-            #self._stateTitle = self._drawText("Title", self._title, self._stateTitle)
             if self._stateTitle == DisplayStateMachineState.FINISHED:
                 self._moveNextDisplayStart = True
-            pass
+        else:
+            self._moveNextDisplayStart = True
 
     @abstractmethod
     # def _drawText(self, header: str, text: str, state: DisplayStateMachineState) -> DisplayStateMachineState:
@@ -124,4 +123,53 @@ class DisplaySimpleConsole(DisplayBase):
         self.clear_screen()
         print(f"Artist: {self._artist}")
         print("-" * self.max_widths[DisplayInfoTypes.SONG_TITLE])
-        print(f"Title: {self._title}")  
+        print(f"Title: {self._title}")
+
+
+class DisplayConsoleRandomTypewriter(DisplayBase):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._artist_animator : RandomTypeWriter
+        self._title_animator : RandomTypeWriter
+        self._lastArtist = ""
+        self._lastTitle = ""
+        self._next_frame_ticks = uint64(self._ticks.value + 100)
+    
+    def clear_screen(self):
+        print("\033[H\033[2J", end="")  # Clear console
+
+    def _updateDisplay(self) -> None:
+        if self._artist != self._lastArtist:
+            self._artist_animator = RandomTypeWriter(self._artist, max_text_width=self.max_widths[DisplayInfoTypes.SONG_ARTIST])
+            self._stateArtist = DisplayStateMachineState.ANIMATING
+            self._lastArtist = self._artist
+            self._next_frame_ticks = self._ticks # act immediately on artist change, don't wait for the next tick
+        
+        if self._title != self._lastTitle:
+            self._title_animator = RandomTypeWriter(self._title, max_text_width=self.max_widths[DisplayInfoTypes.SONG_TITLE])
+            self._stateTitle = DisplayStateMachineState.ANIMATING
+            self._lastTitle = self._title
+            self._next_frame_ticks = self._ticks # act immediately on artist change, don't wait for the next tick
+
+        if self._ticks.value < self._next_frame_ticks.value:
+            return
+        self._next_frame_ticks = uint64(self._ticks.value + 100)
+        self.clear_screen()
+
+        if self._artist_animator is not None and self._stateArtist == DisplayStateMachineState.ANIMATING:
+            print(f"Artist: {self._artist_animator.next()}")
+            if self._artist_animator.is_finished:
+                self._stateArtist = DisplayStateMachineState.FINISHED
+        else:
+            print(f"Artist: {self._artist}")
+            self._stateArtist = DisplayStateMachineState.FINISHED
+
+        print("-" * max(self.max_widths[DisplayInfoTypes.SONG_ARTIST], self.max_widths[DisplayInfoTypes.SONG_TITLE]))
+
+        if self._title_animator is not None and self._stateTitle == DisplayStateMachineState.ANIMATING:
+            print(f"Title: {self._title_animator.next()}")
+            if self._title_animator.is_finished:
+                self._stateTitle = DisplayStateMachineState.FINISHED
+        else:
+            print(f"Title: {self._title}")
+            self._stateTitle = DisplayStateMachineState.FINISHED
