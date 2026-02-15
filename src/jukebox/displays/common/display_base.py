@@ -157,7 +157,6 @@ class DisplayConsoleRandomTypewriter(DisplaySimpleConsole):
                 if target_name == "artist":
                     self._next_frame_ticks_artist.value = self._ticks.value + self._segment_finished_delay_ms
                     self._stateArtist = DisplayStateMachineState.DELAY_START
-
                 elif target_name == "title":
                     self._next_frame_ticks_title.value = self._ticks.value + self._segment_finished_delay_ms
                     self._stateTitle = DisplayStateMachineState.DELAY_START
@@ -182,7 +181,11 @@ class DisplayConsoleRandomTypewriter(DisplaySimpleConsole):
                 screen_update |= True
                 self._next_frame_ticks_artist.value = self._ticks.value + self._update_every_ms
             if self._artist_animator.is_finished:
-                self._stateArtist = DisplayStateMachineState.FINISHED
+                self._stateArtist = DisplayStateMachineState.END_ANIMATION
+                self._next_frame_ticks_artist.value = self._ticks.value + self._segment_finished_delay_ms
+            elif self._stateArtist == DisplayStateMachineState.END_ANIMATION:
+                if self._ticks.value >= self._next_frame_ticks_artist.value:
+                    self._stateArtist = DisplayStateMachineState.INIT
 
         if self._buffer_title == self.title:
             # Title is fully drawn and matches the current title, nothing to do
@@ -200,7 +203,11 @@ class DisplayConsoleRandomTypewriter(DisplaySimpleConsole):
                 screen_update |= True
                 self._next_frame_ticks_title.value = self._ticks.value + self._update_every_ms
             if self._title_animator.is_finished:
-                self._stateTitle = DisplayStateMachineState.FINISHED
+                self._stateTitle = DisplayStateMachineState.END_ANIMATION
+                self._next_frame_ticks_title.value = self._ticks.value + self._segment_finished_delay_ms
+        elif self._stateTitle == DisplayStateMachineState.END_ANIMATION:
+            if self._ticks.value >= self._next_frame_ticks_title.value:
+                self._stateTitle = DisplayStateMachineState.INIT
 
         if screen_update:
             self.clear_screen()

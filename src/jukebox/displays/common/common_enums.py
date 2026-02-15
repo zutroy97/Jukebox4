@@ -20,6 +20,8 @@ class DisplayStateMachineState(Enum):
     DELAY = 8
     """Waiting for a delay to pass before starting next animation."""
     DELAY_START = 9
+    RESTART_DELAY = 10
+    """Waiting for a delay to pass before restarting current animation"""
 
 class DisplayInfoState(Enum):
     IDLE = 0
