@@ -185,13 +185,13 @@ class DisplayConsoleRandomTypewriter(DisplaySimpleConsole):
                 self._stateArtist = DisplayStateMachineState.FINISHED
 
         if self._buffer_title == self.title:
-            # Artist is fully drawn and matches the current artist, nothing to do
+            # Title is fully drawn and matches the current title, nothing to do
             self._stateTitle = DisplayStateMachineState.FINISHED
         elif self._stateTitle == DisplayStateMachineState.DELAY_START:
-            self._next_frame_ticks_artist.value = self._ticks.value + self._segment_finished_delay_ms
+            self._next_frame_ticks_title.value = self._ticks.value + self._segment_finished_delay_ms
             self._stateTitle = DisplayStateMachineState.DELAY
         elif self._stateTitle == DisplayStateMachineState.DELAY:
-            if self._ticks.value >= self._next_frame_ticks_artist.value:
+            if self._ticks.value >= self._next_frame_ticks_title.value:
                 self._stateTitle = DisplayStateMachineState.ANIMATING
                 self._next_frame_ticks_title.value = self._ticks.value
         elif self._stateTitle == DisplayStateMachineState.ANIMATING:
