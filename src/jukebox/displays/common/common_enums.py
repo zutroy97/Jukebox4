@@ -16,7 +16,10 @@ class DisplayStateMachineState(Enum):
     FINISHED = 6
     """Finished displaying text (and any animation)."""
     END_ANIMATION = 7
-
+    """Animation finished, waiting for next update or text change."""
+    DELAY = 8
+    """Waiting for a delay to pass before starting next animation."""
+    DELAY_START = 9
 
 class DisplayInfoState(Enum):
     IDLE = 0

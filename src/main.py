@@ -34,7 +34,7 @@ async def main():
 
     subject = DisplayCoordinator()
     #display = DisplaySimpleConsole()
-    display = DisplayConsoleRandomTypewriter()
+    display = DisplayConsoleRandomTypewriter(max_text_width=12)
     subject.add_observer(display)
     async with asyncio.TaskGroup() as tg:
         task1 = tg.create_task(
