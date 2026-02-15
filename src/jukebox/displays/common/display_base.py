@@ -116,7 +116,7 @@ class DisplaySimpleConsole(DisplayBase):
 class DisplayConsoleRandomTypewriter(DisplaySimpleConsole):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self._update_every_ms = kwargs.get('update_every_ms', 150)
+        self._update_every_ms = kwargs.get('update_every_ms', 100)
         self._segment_finished_delay_ms = kwargs.get('segment_finished_delay_ms', 2000)
         self._artist_animator : RandomTypeWriter
         self._title_animator : RandomTypeWriter
@@ -128,10 +128,8 @@ class DisplayConsoleRandomTypewriter(DisplaySimpleConsole):
         self._stateTitle = DisplayStateMachineState.INIT
 
     def _updateDisplay(self) -> None:
-        #print(f"Updating display. Artist: {self._artist} Title: {self._title}")
         if self._stateArtist == DisplayStateMachineState.TEXT_UPDATED \
             or self._stateArtist == DisplayStateMachineState.INIT:
-            #print(f"Artist updated to: {self._artist}")
             self._artist_animator = RandomTypeWriter(self.artist, max_text_width=self._max_text_width)
             self._artist_animator.add_observer(self, target_name="artist")
             self._stateArtist = DisplayStateMachineState.ANIMATING
@@ -139,7 +137,6 @@ class DisplayConsoleRandomTypewriter(DisplaySimpleConsole):
         
         if self._stateTitle == DisplayStateMachineState.TEXT_UPDATED \
             or self._stateTitle == DisplayStateMachineState.INIT:
-            #print(f"Title updated to: {self._title}")   
             self._title_animator = RandomTypeWriter(self._title, max_text_width=self._max_text_width)
             self._title_animator.add_observer(self, target_name="title")
             self._stateTitle = DisplayStateMachineState.ANIMATING
