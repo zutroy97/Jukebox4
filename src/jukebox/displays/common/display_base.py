@@ -1,6 +1,6 @@
 import logging
 from jukebox.coordinator.change_events import ChangeEvents
-from jukebox.displays.common.common_enums import  DisplayStateMachineState, DisplayInfoState, DisplayInfoTypes
+from jukebox.displays.common.common_enums import  DisplayStateMachineState, DisplayInfoState
 from abc import ABC, abstractmethod
 from ctypes import c_uint64 as uint64 
 from jukebox.animators.random_typewriter import RandomTypeWriter
