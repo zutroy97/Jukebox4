@@ -1,7 +1,28 @@
 import random
 import textwrap
-from jukebox.animators import animation
+from time import sleep
+import animation
 
+class RandomTypeWriter2(animation.Animation):
+    def __init__(self, text: str, **kwargs) -> None:
+        super().__init__()
+        self.position = 0
+        self.count = 0
+        self.text = text.strip()
+        self._character_queue = list(range(0, len(self.text)))
+        random.shuffle(self._character_queue)
+        self._frameBuffer = list(' ' * len(self.text)) # empty string of the same length as text, to be filled in as the animation progresses   
+
+    def next(self) -> str:
+        '''Advances the animation by one step and returns the current state of the text.'''
+        x = self._character_queue.pop(0)
+        self._frameBuffer[x] = self.text[x]
+        buf = ''.join(self._frameBuffer)
+        if len(self._character_queue) == 0:
+            self.notify_observers(event="segment_finished" )
+            self.done = True
+        return buf # makes _rendered into a string
+    
 class RandomTypeWriter(animation.Animation):
     def __init__(self, text: str, **kwargs) -> None:
         super().__init__()
@@ -38,3 +59,11 @@ class RandomTypeWriter(animation.Animation):
                 #print(f"Finished animating all lines for text: {self.text}")
         return buf # makes _rendered into a string
 
+if __name__ == "__main__":
+    width = 20
+    anim = RandomTypeWriter2("Hello There, Scott Simon")
+    while not anim.is_finished:
+        print("\033[H\033[2J", end="")  # Clear console
+        print(anim.next())
+        print('-' * width)
+        sleep(0.05)
