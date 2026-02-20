@@ -8,8 +8,9 @@ from jukebox.coordinator.display_coordinator import DisplayCoordinator
 #from typing import Dict, List, Optional, Tuple, Union
 import asyncio
 
-from jukebox.displays.console.random_typewriter import RandomTypewriter as ConsoleRandomTypewriter
-from jukebox.displays.console.simple import Simple as ConsoleSimple
+#from jukebox.displays.console.random_typewriter import RandomTypewriter as ConsoleRandomTypewriter
+from jukebox.displays.console.random_typewriter import DisplayConsoleRandomTypewriter
+#from jukebox.displays.console.simple import Simple as ConsoleSimple
 
 async def wait_and_stop(coor: DisplayCoordinator, delay: float) -> None:
     coor.song_artist = "Nirvana"
@@ -33,7 +34,8 @@ async def main():
     logging.basicConfig(level=logging.DEBUG)
 
     subject = DisplayCoordinator()
-    display = ConsoleRandomTypewriter(max_text_width=12)
+#    display = ConsoleRandomTypewriter(max_text_width=12)
+    display = DisplayConsoleRandomTypewriter(max_text_width=12)
     #display = ConsoleSimple(max_text_width=12)
     subject.add_observer(display)
     async with asyncio.TaskGroup() as tg:

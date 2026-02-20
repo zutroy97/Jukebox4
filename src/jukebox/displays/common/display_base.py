@@ -53,34 +53,35 @@ class DisplayBase(ABC):
                 self.song_artist_updated()
             elif event == ChangeEvents.TICK:
                 self._ticks.value += 10
-                self._refresh()
+                #self._refresh()
+                self._updateDisplay()
 
     def __del__(self):
         pass
 
-    def _refresh(self) -> None:
-        #self._logger.debug(f"Ticks: {self._ticks.value} AlarmTicks: {self._alarmTicks.value}")
-        # if (self._ticks.value >= self._alarmTicks.value or self._moveNextDisplayStart == True):
-        #     self._alarmTicks.value = self._ticks.value + self._minDwellTicks
-        #     self._moveNextDisplayStart = False
-        #     if self._displayState == DisplayInfoState.DRAWING_ARTIST:
-        #         self._displayState = DisplayInfoState.DRAWING_TITLE
-        #         self._stateArtist = DisplayStateMachineState.INIT
-        #     else:
-        #         self._displayState = DisplayInfoState.DRAWING_TITLE
-        #         self._displayState = DisplayInfoState.DRAWING_ARTIST
-        #         self._stateTitle = DisplayStateMachineState.INIT
+    # def _refresh(self) -> None:
+    #     #self._logger.debug(f"Ticks: {self._ticks.value} AlarmTicks: {self._alarmTicks.value}")
+    #     # if (self._ticks.value >= self._alarmTicks.value or self._moveNextDisplayStart == True):
+    #     #     self._alarmTicks.value = self._ticks.value + self._minDwellTicks
+    #     #     self._moveNextDisplayStart = False
+    #     #     if self._displayState == DisplayInfoState.DRAWING_ARTIST:
+    #     #         self._displayState = DisplayInfoState.DRAWING_TITLE
+    #     #         self._stateArtist = DisplayStateMachineState.INIT
+    #     #     else:
+    #     #         self._displayState = DisplayInfoState.DRAWING_TITLE
+    #     #         self._displayState = DisplayInfoState.DRAWING_ARTIST
+    #     #         self._stateTitle = DisplayStateMachineState.INIT
 
-        self._updateDisplay()
+    #     self._updateDisplay()
 
-        # if self._displayState == DisplayInfoState.DRAWING_ARTIST:
-        #     if self._stateArtist == DisplayStateMachineState.FINISHED:
-        #         self._moveNextDisplayStart = True
-        # elif self._displayState == DisplayInfoState.DRAWING_TITLE:
-        #     if self._stateTitle == DisplayStateMachineState.FINISHED:
-        #         self._moveNextDisplayStart = True
-        # else:
-        #     self._moveNextDisplayStart = True
+    #     # if self._displayState == DisplayInfoState.DRAWING_ARTIST:
+    #     #     if self._stateArtist == DisplayStateMachineState.FINISHED:
+    #     #         self._moveNextDisplayStart = True
+    #     # elif self._displayState == DisplayInfoState.DRAWING_TITLE:
+    #     #     if self._stateTitle == DisplayStateMachineState.FINISHED:
+    #     #         self._moveNextDisplayStart = True
+    #     # else:
+    #     #     self._moveNextDisplayStart = True
 
     @abstractmethod
     def _updateDisplay(self) -> None:

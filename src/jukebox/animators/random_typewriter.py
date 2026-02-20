@@ -1,67 +1,41 @@
 import random
-import textwrap
 from time import sleep
-import animation
+from jukebox.animators import animation
+from jukebox.animators.multi_line_generator import MultiLineGenerator   
 
-class RandomTypeWriter2(animation.Animation):
+class RandomTypeWriter(animation.Animation):
     def __init__(self, text: str, **kwargs) -> None:
-        super().__init__()
-        self.position = 0
-        self.count = 0
-        self.text = text.strip()
-        self._character_queue = list(range(0, len(self.text)))
+        super().__init__(text, **kwargs)
+        self._character_queue = []
+        self._generator = MultiLineGenerator(text, **kwargs)
+        self._current_line : str = ''
+        self._init_queue(self._generator.next())
+        
+    def _init_queue(self, text: str) -> None:
+        self._current_line = text.strip()
+        self._character_queue = list(range(0, len(self._current_line)))
         random.shuffle(self._character_queue)
-        self._frameBuffer = list(' ' * len(self.text)) # empty string of the same length as text, to be filled in as the animation progresses   
+        self._frameBuffer = list(' ' * self.max_text_width) # empty string of the same length as text, to be filled in as the animation progresses   
 
     def next(self) -> str:
         '''Advances the animation by one step and returns the current state of the text.'''
         x = self._character_queue.pop(0)
-        self._frameBuffer[x] = self.text[x]
+        self._frameBuffer[x] = self._current_line[x]
         buf = ''.join(self._frameBuffer)
         if len(self._character_queue) == 0:
             self.notify_observers(event="segment_finished" )
-            self.done = True
-        return buf # makes _rendered into a string
-    
-class RandomTypeWriter(animation.Animation):
-    def __init__(self, text: str, **kwargs) -> None:
-        super().__init__()
-        self.text = ''
-        self._max_text_width = kwargs.get('max_text_width', 80)
-        self.position = 0
-        self.count = 0
-        self._lines = textwrap.wrap(text.strip(), width=self._max_text_width, expand_tabs=False)
-        self.___init_queue(self._lines.pop(0))
-
-    def ___init_queue(self, text: str) -> None:
-        self.text = text.strip()
-        self.__character_queue = list(range(0, len(self.text)))
-
-        random.shuffle(self.__character_queue)
-        self._frameBuffer = list(' ' * len(self.text)) # empty string of the same length as text, to be filled in as the animation progresses   
-        #print(f"Initialized animator for line: {text} with character queue: {self.__character_queue}")
-
-    def next(self) -> str:
-        '''Advances the animation by one step and returns the current state of the text.'''
-        
-        x = self.__character_queue.pop(0)
-        self._frameBuffer[x] = self.text[x]
-        buf = ''.join(self._frameBuffer)
-        if len(self.__character_queue) == 0:
-            self.notify_observers(event="segment_finished" )
-            #print(f"_frameBuffer='{self._frameBuffer}'")
-            #print(f"Finished animating line: {''.join(self._frameBuffer)}")
-            if len(self._lines) > 0:
+            if self._generator.is_finished:
                 # Finished animating the current line, move on to the next line
-                self.___init_queue(self._lines.pop(0))
+                self._done = True
             else:
-                self.done = True
-                #print(f"Finished animating all lines for text: {self.text}")
+                self._init_queue(self._generator.next())
         return buf # makes _rendered into a string
 
 if __name__ == "__main__":
-    width = 20
-    anim = RandomTypeWriter2("Hello There, Scott Simon")
+    width = 75
+    #anim = RandomTypeWriter2("Hello There, Scott Simon")
+    #anim = RandomTypeWriterMultiLine("Hello There, Scott Simon. This is a test of the random typewriter animation. It should display the text in a random order, one character at a time, and then move on to the next line when finished.", max_text_width=width)
+    anim = RandomTypeWriter("Hello There, Scott Simon")
     while not anim.is_finished:
         print("\033[H\033[2J", end="")  # Clear console
         print(anim.next())
