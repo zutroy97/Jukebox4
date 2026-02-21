@@ -1,8 +1,8 @@
 import logging
 from jukebox.coordinator.display_coordinator import DisplayCoordinator
 
-# from busio import I2C
-# import board
+from busio import I2C
+import board
 # from adafruit_ht16k33 import segments
 
 #from typing import Dict, List, Optional, Tuple, Union
@@ -11,6 +11,7 @@ import asyncio
 #from jukebox.displays.console.random_typewriter import RandomTypewriter as ConsoleRandomTypewriter
 from jukebox.displays.console.random_typewriter import DisplayConsoleRandomTypewriter
 #from jukebox.displays.console.simple import Simple as ConsoleSimple
+from jukebox.displays.LED_16_segment.segment_base import SegmentBase, SegmentSimple, SegmentScroller
 
 async def wait_and_stop(coor: DisplayCoordinator, delay: float) -> None:
     coor.song_artist = "Nirvana"
@@ -36,8 +37,11 @@ async def main():
     subject = DisplayCoordinator()
 #    display = ConsoleRandomTypewriter(max_text_width=12)
     display = DisplayConsoleRandomTypewriter(max_text_width=12)
+    #led_display = SegmentSimple()
+    led_display = SegmentScroller()
     #display = ConsoleSimple(max_text_width=12)
     subject.add_observer(display)
+    subject.add_observer(led_display)
     async with asyncio.TaskGroup() as tg:
         task1 = tg.create_task(
             subject.loop()
