@@ -12,9 +12,6 @@ from jukebox.displays.common.display_base import DisplayBase
 class SegmentBase(DisplayBase):
     def __init__(
             self, 
-            # i2c: I2C,
-            # addr_upper: Union[int, List[int], Tuple[int, ...]] = (0x70, 0x71),
-            # addr_lower: Union[int, List[int], Tuple[int, ...]] = (0x72, 0x73, 0x74),
             **kwargs) -> None:
         super().__init__()
         self._logger = logging.getLogger(__class__.__name__)
@@ -26,9 +23,12 @@ class SegmentBase(DisplayBase):
         self._display8.brightness = 0.20
         self._display12.brightness = 0.20
     
-    def _updateDisplay(self) -> None:
+    def clear_screen(self) -> None:
         self._display8.fill(0)
         self._display12.fill(0)
+
+    def _updateDisplay(self) -> None:
+
         self._display8.print(f"{self.artist:<8}")
         self._display12.print(f"{self.title:<12}")
 
@@ -46,8 +46,7 @@ class SegmentSimple(SegmentBase):
             return
         self._lastArtist = self.artist
         self._lastTitle = self.title
-        self._display8.fill(0)
-        self._display12.fill(0)
+        self.clear_screen()
         self._display8.print(f"{self.artist[:8]:<8}")
         self._display12.print(f"{self.title[:12]:<12}")
 

@@ -11,5 +11,4 @@ class MultiLineGenerator(animation.Animation):
         buf = self._lines.pop(0)
         if len(self._lines) == 0:
             self._done = True
-        #print(f"MultiLineGenerator: next line is '{buf}'")
         return buf # makes _rendered into a string

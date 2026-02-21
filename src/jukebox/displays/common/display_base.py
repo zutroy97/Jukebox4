@@ -57,6 +57,7 @@ class DisplayBase(ABC):
                 self._updateDisplay()
 
     def __del__(self):
+        self.clear_screen()
         pass
 
     # def _refresh(self) -> None:
@@ -86,6 +87,11 @@ class DisplayBase(ABC):
     @abstractmethod
     def _updateDisplay(self) -> None:
         '''Subclasses can implement this method to update the display with new text'''
+        pass
+
+    @abstractmethod
+    def clear_screen(self) -> None:
+        '''Subclasses can implement this method to clear the display'''
         pass
 
 
