@@ -51,7 +51,7 @@ class DisplayState:
     def is_updated(self) -> bool:
         if self.state == DisplayStateMachineState.TEXT_UPDATED \
             or self.state == DisplayStateMachineState.INIT:
-            self.animator = RandomTypeWriter(self.value, max_text_width=self.parent._max_text_width)
+            self.animator = RandomTypeWriter(text=self.value, max_text_width=self.parent._max_text_width)
             self.animator.add_observer(self)
             self.state = DisplayStateMachineState.ANIMATING
             self.add_next_frame_ticks(0) # act immediately on artist change, don't wait for the next tick

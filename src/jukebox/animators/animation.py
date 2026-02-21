@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 
 class Animation(ABC):
-    def __init__(self, text: str, **kwargs):
+    def __init__(self, **kwargs):
         self.observers = []
-        self._text = text.strip()
+        self._text = kwargs.get('text', '').strip()
         self._done : bool = False
         self._max_text_width = kwargs.get('max_text_width', 80)
 

@@ -2,8 +2,8 @@ import textwrap
 from jukebox.animators import animation
 
 class MultiLineGenerator(animation.Animation):
-    def __init__(self, text: str, **kwargs) -> None:
-        super().__init__(text, **kwargs)
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
         self._lines = textwrap.wrap(self.text, width=self.max_text_width, expand_tabs=False)
 
     def next(self) -> str:

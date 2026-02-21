@@ -64,10 +64,10 @@ class SegmentScroller(SegmentBase):
     
     def song_title_updated(self) -> None:
         self._titleBuffer = self._getBufferedString(self.title, 12)
-        self._logger.debug(f"Updated title buffer: {self._titleBuffer}")
+        #self._logger.debug(f"Updated title buffer: {self._titleBuffer}")
     def song_artist_updated(self) -> None:
         self._artistBuffer = self._getBufferedString(self.artist, 8)
-        self._logger.debug(f"Updated artist buffer: {self._artistBuffer}")
+        #self._logger.debug(f"Updated artist buffer: {self._artistBuffer}")
     def _updateDisplay(self) -> None:
         self._display8.non_blocking_marquee(self._artistBuffer, delay=0.3, loop=(len(self._artistBuffer) >8), space_between=0)
-        self._display12.non_blocking_marquee(self._titleBuffer, delay=0.3, loop=True, space_between=0)
+        self._display12.non_blocking_marquee(self._titleBuffer, delay=0.3, loop=(len(self._titleBuffer) >12), space_between=0)
