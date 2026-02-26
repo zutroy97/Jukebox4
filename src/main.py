@@ -9,9 +9,10 @@ import board
 import asyncio
 
 #from jukebox.displays.console.random_typewriter import RandomTypewriter as ConsoleRandomTypewriter
+from jukebox.displays.LED_16_segment.segment_base import SegmentAlienIntro
 from jukebox.displays.console.random_typewriter import DisplayConsoleRandomTypewriter
 #from jukebox.displays.console.simple import Simple as ConsoleSimple
-from jukebox.displays.LED_16_segment.segment_base import SegmentBase, SegmentSimple, SegmentScroller
+from jukebox.displays.LED_16_segment.segment_scroller import SegmentScroller    
 
 async def wait_and_stop(coor: DisplayCoordinator, delay: float) -> None:
     coor.song_artist = "Nirvana"
@@ -53,3 +54,6 @@ async def main():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     asyncio.run(main())
+    # display = SegmentAlienIntro()
+    # print(f"A) {display._get_char_pattern('A'):b}")
+    # print(f"!) {display._get_char_pattern('!'):b}")

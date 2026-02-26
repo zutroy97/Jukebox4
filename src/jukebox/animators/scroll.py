@@ -10,7 +10,6 @@ class Scroll(animation.Animation):
         self._num_trailing_spaces = kwargs.get('num_trailing_spaces', self._max_text_width)
         self._repeat :bool = kwargs.get('repeat', False)
         self._buffer = (' ' * self._max_text_width) + self.text
-        #if len(self._buffer) > self._max_text_width:
         self._buffer += (' ' * self._num_trailing_spaces)  # Add spacing when scrolling
 
     def next(self) -> str:

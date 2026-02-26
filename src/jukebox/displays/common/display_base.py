@@ -31,10 +31,8 @@ class DisplayBase(ABC):
         return self._artist
     
     def song_title_updated(self) -> None:
-        #self._alarmTicks.value = self._ticks.value + self._minDwellTicks
         self._stateTitle = DisplayStateMachineState.TEXT_UPDATED
     def song_artist_updated(self) -> None:
-        #self._alarmTicks.value = self._ticks.value + self._minDwellTicks
         self._stateArtist = DisplayStateMachineState.TEXT_UPDATED
 
     def update(self, **kwargs):
@@ -52,13 +50,39 @@ class DisplayBase(ABC):
                 self._artist = value
                 self.song_artist_updated()
             elif event == ChangeEvents.TICK:
-                self._ticks.value += 10
-                #self._refresh()
-                self._updateDisplay()
+                self._tick()
+                #self._ticks.value += 10
+                #self._updateDisplay()
 
     def __del__(self):
         self.clear_screen()
         pass
+
+    def _tick(self) -> None:
+        '''Advances the internal clock of the display. Should be called by the DisplayCoordinator on each tick.'''
+        self._ticks.value += 10
+        #self._logger.debug(f"Ticks: {self._ticks.value} AlarmTicks: {self._alarmTicks.value}")
+        if (self._ticks.value >= self._alarmTicks.value or self._moveNextDisplayStart == True):
+            self._alarmTicks.value = self._ticks.value + self._minDwellTicks
+            self._moveNextDisplayStart = False
+            if self._displayState == DisplayInfoState.DRAWING_ARTIST:
+                self._displayState = DisplayInfoState.DRAWING_TITLE
+                self._stateArtist = DisplayStateMachineState.INIT
+            else:
+                self._displayState = DisplayInfoState.DRAWING_TITLE
+                self._stateTitle = DisplayStateMachineState.INIT
+
+        self._updateDisplay()
+
+        if self._displayState == DisplayInfoState.DRAWING_ARTIST:
+            if self._stateArtist == DisplayStateMachineState.FINISHED:
+                self._moveNextDisplayStart = True
+        elif self._displayState == DisplayInfoState.DRAWING_TITLE:
+            if self._stateTitle == DisplayStateMachineState.FINISHED:
+                self._moveNextDisplayStart = True
+        else:
+            self._moveNextDisplayStart = True        
+
 
     # def _refresh(self) -> None:
     #     #self._logger.debug(f"Ticks: {self._ticks.value} AlarmTicks: {self._alarmTicks.value}")

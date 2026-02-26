@@ -1,15 +1,114 @@
 import logging
+import random
 from busio import I2C
 import board
 from typing import Dict, List, Optional, Tuple, Union
 import asyncio
 from adafruit_ht16k33 import segments
-from ctypes import c_uint64 as uint64 
-from enum import Enum
 
+
+from jukebox.displays.common.common_enums import DisplayStateMachineState
 from jukebox.displays.common.display_base import DisplayBase
 
 class SegmentBase(DisplayBase):
+    CHARS = (
+        0b00000000, 0b00000000,
+        0b01000000, 0b00000110,  # !
+        0b00000010, 0b00100000,  # "
+        0b00010010, 0b11001110,  # #
+        0b00010010, 0b11101101,  # $
+        0b00001100, 0b00100100,  # %
+        0b00100011, 0b01011101,  # &
+        0b00000100, 0b00000000,  # '
+        0b00100100, 0b00000000,  # (
+        0b00001001, 0b00000000,  # )
+        0b00111111, 0b11000000,  # *
+        0b00010010, 0b11000000,  # +
+        0b00001000, 0b00000000,  # ,
+        0b00000000, 0b11000000,  # -
+        0b00000000, 0b00000000,  # .
+        0b00001100, 0b00000000,  # /
+        0b00001100, 0b00111111,  # 0
+        0b00000000, 0b00000110,  # 1
+        0b00000000, 0b11011011,  # 2
+        0b00000000, 0b10001111,  # 3
+        0b00000000, 0b11100110,  # 4
+        0b00100000, 0b01101001,  # 5
+        0b00000000, 0b11111101,  # 6
+        0b00000000, 0b00000111,  # 7
+        0b00000000, 0b11111111,  # 8
+        0b00000000, 0b11101111,  # 9
+        0b00010010, 0b00000000,  # :
+        0b00001010, 0b00000000,  # ;
+        0b00100100, 0b01000000,  # <
+        0b00000000, 0b11001000,  # =
+        0b00001001, 0b10000000,  # >
+        0b01100000, 0b10100011,  # ?
+        0b00000010, 0b10111011,  # @
+        0b00000000, 0b11110111,  # A
+        0b00010010, 0b10001111,  # B
+        0b00000000, 0b00111001,  # C
+        0b00010010, 0b00001111,  # D
+        0b00000000, 0b11111001,  # E
+        0b00000000, 0b01110001,  # F
+        0b00000000, 0b10111101,  # G
+        0b00000000, 0b11110110,  # H
+        0b00010010, 0b00000000,  # I
+        0b00000000, 0b00011110,  # J
+        0b00100100, 0b01110000,  # K
+        0b00000000, 0b00111000,  # L
+        0b00000101, 0b00110110,  # M
+        0b00100001, 0b00110110,  # N
+        0b00000000, 0b00111111,  # O
+        0b00000000, 0b11110011,  # P
+        0b00100000, 0b00111111,  # Q
+        0b00100000, 0b11110011,  # R
+        0b00000000, 0b11101101,  # S
+        0b00010010, 0b00000001,  # T
+        0b00000000, 0b00111110,  # U
+        0b00001100, 0b00110000,  # V
+        0b00101000, 0b00110110,  # W
+        0b00101101, 0b00000000,  # X
+        0b00010101, 0b00000000,  # Y
+        0b00001100, 0b00001001,  # Z
+        0b00000000, 0b00111001,  # [
+        0b00100001, 0b00000000,  # \
+        0b00000000, 0b00001111,  # ]
+        0b00001100, 0b00000011,  # ^
+        0b00000000, 0b00001000,  # _
+        0b00000001, 0b00000000,  # `
+        0b00010000, 0b01011000,  # a
+        0b00100000, 0b01111000,  # b
+        0b00000000, 0b11011000,  # c
+        0b00001000, 0b10001110,  # d
+        0b00001000, 0b01011000,  # e
+        0b00000000, 0b01110001,  # f
+        0b00000100, 0b10001110,  # g
+        0b00010000, 0b01110000,  # h
+        0b00010000, 0b00000000,  # i
+        0b00000000, 0b00001110,  # j
+        0b00110110, 0b00000000,  # k
+        0b00000000, 0b00110000,  # l
+        0b00010000, 0b11010100,  # m
+        0b00010000, 0b01010000,  # n
+        0b00000000, 0b11011100,  # o
+        0b00000001, 0b01110000,  # p
+        0b00000100, 0b10000110,  # q
+        0b00000000, 0b01010000,  # r
+        0b00100000, 0b10001000,  # s
+        0b00000000, 0b01111000,  # t
+        0b00000000, 0b00011100,  # u
+        0b00100000, 0b00000100,  # v
+        0b00101000, 0b00010100,  # w
+        0b00101000, 0b11000000,  # x
+        0b00100000, 0b00001100,  # y
+        0b00001000, 0b01001000,  # z
+        0b00001001, 0b01001001,  # {
+        0b00010010, 0b00000000,  # |
+        0b00100100, 0b10001001,  # }
+        0b00000101, 0b00100000,  # ~
+        0b00111111, 0b11111111,
+    )
     def __init__(
             self, 
             **kwargs) -> None:
@@ -28,45 +127,54 @@ class SegmentBase(DisplayBase):
         self._display12.fill(0)
 
     def _updateDisplay(self) -> None:
-
         self._display8.print(f"{self.artist:<8}")
         self._display12.print(f"{self.title:<12}")
 
-class SegmentSimple(SegmentBase):
+    def _get_char_pattern(self, char: str) -> int:
+        if not 32 <= ord(char) <= 127:
+            return 0
+        # TODO: Handle decimal points and commas, which are not currently supported by this mapping
+        character = ord(char) * 2 - 64
+        return (self.CHARS[character]<<8)|self.CHARS[1 +character]
+
+
+class SegmentAlienIntro(SegmentBase):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self._lastArtist : str = ""
-        self._lastTitle : str = ""
+        self._buffer8 : str = ""
+        self._queue8 : List[int] = []
+        self._buffer12 : str = ""
+        self._queue12 : List[int] = []
 
     def _updateDisplay(self) -> None:
-        update_screen : bool = False
-        update_screen |= self.artist != self._lastArtist
-        update_screen |= self.title != self._lastTitle
-        if not update_screen:
-            return
-        self._lastArtist = self.artist
-        self._lastTitle = self.title
-        self.clear_screen()
-        self._display8.print(f"{self.artist[:8]:<8}")
-        self._display12.print(f"{self.title[:12]:<12}")
+        if self._stateArtist == DisplayStateMachineState.TEXT_UPDATED:
+            self._buffer8 = self.artist[:8]
+            self._queue8 = list(range(0, 15))
+            random.shuffle(self._queue8)
+            self._buffer8Mask = 0
+            self._stateArtist = DisplayStateMachineState.ANIMATING
+        # if self._stateTitle == DisplayStateMachineState.TEXT_UPDATED:
+        #     self._buffer12 = self.title[:12]
+        #     self._queue12 = list(range(0, 15))
+        #     random.shuffle(self._queue12)
+        #     self._buffer12Mask = 0
+        if self._stateArtist == DisplayStateMachineState.ANIMATING:
+            if len(self._queue8) == 0:
+                self._stateArtist = DisplayStateMachineState.FINISHED
+            else:   
+                self._buffer8Mask |= self._queue8.pop(0)
+                displayString = ""
+                for i in range(0, 16):
+                    if (self._buffer8Mask & (1 << i)) > 0:
+                        if i < len(self._buffer8):
+                            displayString += self._buffer8[i]
+                        else:
+                            displayString += " "
+                    else:
+                        displayString += " "
+                self._display8.print(displayString)
 
-class SegmentScroller(SegmentBase):
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self._artistBuffer : str = ""
-        self._titleBuffer : str = ""
-
-    def _getBufferedString(self, value: str, size: int) -> str:
-        if len(value) <= size:
-            return f"{value:<{size}}"
-        return value + " " * size  # add spaces to the end of the string to create a gap when scrolling 
-    
-    def song_title_updated(self) -> None:
-        self._titleBuffer = self._getBufferedString(self.title, 12)
-        #self._logger.debug(f"Updated title buffer: {self._titleBuffer}")
-    def song_artist_updated(self) -> None:
-        self._artistBuffer = self._getBufferedString(self.artist, 8)
-        #self._logger.debug(f"Updated artist buffer: {self._artistBuffer}")
-    def _updateDisplay(self) -> None:
-        self._display8.non_blocking_marquee(self._artistBuffer, delay=0.3, loop=(len(self._artistBuffer) >8), space_between=0)
-        self._display12.non_blocking_marquee(self._titleBuffer, delay=0.3, loop=(len(self._titleBuffer) >12), space_between=0)
+        
+if __name__ == "__main__":
+    display = SegmentAlienIntro()
+    print(f"{display._get_char_pattern('A'):b}")
