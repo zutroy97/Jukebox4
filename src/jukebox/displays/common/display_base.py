@@ -55,7 +55,7 @@ class DisplayBase(ABC):
                 #self._updateDisplay()
 
     def __del__(self):
-        self.clear_screen()
+        #self.clear_screen()
         pass
 
     def _tick(self) -> None:

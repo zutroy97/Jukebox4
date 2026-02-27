@@ -53,7 +53,11 @@ async def main():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    asyncio.run(main())
-    # display = SegmentAlienIntro()
-    # print(f"A) {display._get_char_pattern('A'):b}")
-    # print(f"!) {display._get_char_pattern('!'):b}")
+    #asyncio.run(main())
+    display = SegmentAlienIntro()
+    print(f"A) {display._get_char_pattern('A'):b} {display._get_char_pattern('A')}")
+    print(f"B) {display._get_char_pattern('B'):b} {display._get_char_pattern('B')}")
+    print(f"C) {display._get_char_pattern('C'):b} {display._get_char_pattern('C')}")
+    print(f"ABC {display.string_to_char_mask('ABC')}")
+    display.display(0, display._get_char_pattern('A'))
+    display.display(1, display._get_char_pattern('B'))

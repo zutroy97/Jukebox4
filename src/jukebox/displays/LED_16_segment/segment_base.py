@@ -136,43 +136,40 @@ class SegmentBase(DisplayBase):
         # TODO: Handle decimal points and commas, which are not currently supported by this mapping
         character = ord(char) * 2 - 64
         return (self.CHARS[character]<<8)|self.CHARS[1 +character]
-
+    
+    def string_to_char_mask(self, s: str) -> List[int]:
+        return [self._get_char_pattern(ch) for ch in s]
 
 class SegmentAlienIntro(SegmentBase):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self._buffer8 : str = ""
-        self._queue8 : List[int] = []
+        self._mask8 : List[int] = []
+        '''Bitmask representing which characters in the current line have been revealed. Should be updated as the animation progresses.'''
+        self._segment_queue8 : List[int] = []
         self._buffer12 : str = ""
         self._queue12 : List[int] = []
 
+    def display(self, pos: int, value: int) -> None:
+        self._display8.set_digit_raw(pos, value)
+
     def _updateDisplay(self) -> None:
         if self._stateArtist == DisplayStateMachineState.TEXT_UPDATED:
-            self._buffer8 = self.artist[:8]
-            self._queue8 = list(range(0, 15))
-            random.shuffle(self._queue8)
-            self._buffer8Mask = 0
+            self._mask8 = self.string_to_char_mask("{:<8}".format(self.artist[:8])) # 
+            self._buffer8 = [0] * 8 # reset the buffer for the new line
+            self._segment_queue8 = list(range(0, 15)) # queue of character positions to reveal, shuffled to create the random effect
+            random.shuffle(self._segment_queue8)
             self._stateArtist = DisplayStateMachineState.ANIMATING
-        # if self._stateTitle == DisplayStateMachineState.TEXT_UPDATED:
-        #     self._buffer12 = self.title[:12]
-        #     self._queue12 = list(range(0, 15))
-        #     random.shuffle(self._queue12)
-        #     self._buffer12Mask = 0
+            logging.debug(f"_mask8 {self._mask8}")
         if self._stateArtist == DisplayStateMachineState.ANIMATING:
-            if len(self._queue8) == 0:
+            if len(self._segment_queue8) == 0:
                 self._stateArtist = DisplayStateMachineState.FINISHED
-            else:   
-                self._buffer8Mask |= self._queue8.pop(0)
-                displayString = ""
-                for i in range(0, 16):
-                    if (self._buffer8Mask & (1 << i)) > 0:
-                        if i < len(self._buffer8):
-                            displayString += self._buffer8[i]
-                        else:
-                            displayString += " "
-                    else:
-                        displayString += " "
-                self._display8.print(displayString)
+            else:
+                pos = 0
+                this_mask = 1 << self._segment_queue8.pop(0)
+                for mask in self._mask8:
+                    self._buffer8[pos] = mask | this_mask
+                    self._display8[pos] = self._buffer8[pos]
+                    pos += 1
 
         
 if __name__ == "__main__":
