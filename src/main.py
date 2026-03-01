@@ -37,12 +37,13 @@ async def main():
 
     subject = DisplayCoordinator()
 #    display = ConsoleRandomTypewriter(max_text_width=12)
-    display = DisplayConsoleRandomTypewriter(max_text_width=12)
+    #display = DisplayConsoleRandomTypewriter(max_text_width=12)
     #led_display = SegmentSimple()
-    led_display = SegmentScroller()
+    #led_display = SegmentScroller()
     #display = ConsoleSimple(max_text_width=12)
+    display = SegmentAlienIntro()
     subject.add_observer(display)
-    subject.add_observer(led_display)
+    #subject.add_observer(led_display)
     async with asyncio.TaskGroup() as tg:
         task1 = tg.create_task(
             subject.loop()
@@ -53,11 +54,11 @@ async def main():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    #asyncio.run(main())
-    display = SegmentAlienIntro()
-    print(f"A) {display._get_char_pattern('A'):b} {display._get_char_pattern('A')}")
-    print(f"B) {display._get_char_pattern('B'):b} {display._get_char_pattern('B')}")
-    print(f"C) {display._get_char_pattern('C'):b} {display._get_char_pattern('C')}")
-    print(f"ABC {display.string_to_char_mask('ABC')}")
-    display.display(0, display._get_char_pattern('A'))
-    display.display(1, display._get_char_pattern('B'))
+    asyncio.run(main())
+#     display = SegmentAlienIntro(text = 'Scott')
+#     print(f"A) {display._get_char_pattern('A'):b} {display._get_char_pattern('A')}")
+#     print(f"B) {display._get_char_pattern('B'):b} {display._get_char_pattern('B')}")
+#     print(f"C) {display._get_char_pattern('C'):b} {display._get_char_pattern('C')}")
+#     print(f"ABC {display.string_to_char_mask('ABC')}")
+# #    display.display(0, display._get_char_pattern('A'))
+ #   display.display(1, display._get_char_pattern('B')

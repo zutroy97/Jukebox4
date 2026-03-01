@@ -148,30 +148,41 @@ class SegmentAlienIntro(SegmentBase):
         self._segment_queue8 : List[int] = []
         self._buffer12 : str = ""
         self._queue12 : List[int] = []
+        self._delayCnt = 0
 
     def display(self, pos: int, value: int) -> None:
         self._display8.set_digit_raw(pos, value)
 
     def _updateDisplay(self) -> None:
-        if self._stateArtist == DisplayStateMachineState.TEXT_UPDATED:
+        if self._stateArtist in (DisplayStateMachineState.TEXT_UPDATED, DisplayStateMachineState.INIT):
             self._mask8 = self.string_to_char_mask("{:<8}".format(self.artist[:8])) # 
             self._buffer8 = [0] * 8 # reset the buffer for the new line
-            self._segment_queue8 = list(range(0, 15)) # queue of character positions to reveal, shuffled to create the random effect
+            self._segment_queue8 = list(range(0, 16)) # queue of character segments to reveal, shuffled to create the random effect
             random.shuffle(self._segment_queue8)
             self._stateArtist = DisplayStateMachineState.ANIMATING
-            logging.debug(f"_mask8 {self._mask8}")
+            #self._logger.debug(f"_mask8 {self._mask8} {self.artist[:8]:<8}")
+        if self._delayCnt > 0:
+            self._delayCnt -= 1
+            return
+        else:
+            self._delayCnt = 5
         if self._stateArtist == DisplayStateMachineState.ANIMATING:
             if len(self._segment_queue8) == 0:
                 self._stateArtist = DisplayStateMachineState.FINISHED
+                # self._display8.print(f"{self.artist:<8}")
+                # self._display12.print(f"{self.title:<12}")
+                self._running = False
             else:
-                pos = 0
                 this_mask = 1 << self._segment_queue8.pop(0)
-                for mask in self._mask8:
-                    self._buffer8[pos] = mask | this_mask
-                    self._display8[pos] = self._buffer8[pos]
-                    pos += 1
+                for pos in range (8):
+                    self._buffer8[pos] |= (self._mask8[pos] & this_mask)
+                    self._display8.set_digit_raw(pos, self._buffer8[pos])                    
+                
+                # pos = 0
+                
+                # for mask in self._buffer8:
+                #     self._buffer8[pos] = self._mask8[pos] | this_mask
+                #     self._display8.set_digit_raw(pos, self._buffer8[pos])
+                #     pos += 1
+                
 
-        
-if __name__ == "__main__":
-    display = SegmentAlienIntro()
-    print(f"{display._get_char_pattern('A'):b}")
