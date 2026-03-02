@@ -156,7 +156,7 @@ class SegmentAlienIntroActiveSegmentOnlyAnimation(SegmentAnimatorBase):
         super().__init__(**kwargs)
         self._args = kwargs
         self._char_data = []
-        self._delaySegmentTicks = kwargs.get('delay_ticks', 5)
+        self._delaySegmentTicks = kwargs.get('segment_delay_ticks', 10)
         '''Number of elapsed ticks between animation updates'''
         self._delaySegmentCnt : int = 0
 
@@ -180,9 +180,6 @@ class SegmentAlienIntroActiveSegmentOnlyAnimation(SegmentAnimatorBase):
 
 
     def str_to_SegmentCharData(self, input : str) -> List[SegmentCharData]:
-        # x = [ord(char) for char in list(input)]
-        # print(f"{len(input)}:{input} {list(input)} {x}")
-       
         x = [self.SegmentCharData(char) for char in list(input)]
         return x
 
