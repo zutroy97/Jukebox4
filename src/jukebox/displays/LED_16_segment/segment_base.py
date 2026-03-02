@@ -7,7 +7,7 @@ import asyncio
 from adafruit_ht16k33 import segments
 
 
-from jukebox.displays.LED_16_segment.animators.segment_animator import SegmentAlienIntroAnimation
+from jukebox.displays.LED_16_segment.animators.segment_animator import SegmentAlienIntroAnimation, SegmentAlienIntroActiveSegmentOnlyAnimation
 from jukebox.displays.common.common_enums import DisplayStateMachineState
 from jukebox.displays.common.display_base import DisplayBase
 
@@ -141,6 +141,32 @@ class SegmentBase(DisplayBase):
     def string_to_char_mask(self, s: str) -> List[int]:
         return [self._get_char_pattern(ch) for ch in s]
 
+class SegmentAlienIntroActiveSegmentOnlyDisplay(SegmentBase):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._animatorArtist : SegmentAlienIntroActiveSegmentOnlyAnimation
+        self._animatorTitle : SegmentAlienIntroActiveSegmentOnlyAnimation
+    
+    def _updateDisplay(self) -> None:
+        if self._stateArtist in (DisplayStateMachineState.TEXT_UPDATED, DisplayStateMachineState.INIT):
+            self._animatorArtist = SegmentAlienIntroActiveSegmentOnlyAnimation(text = self.artist, max_text_width=8)
+            self._stateArtist = DisplayStateMachineState.ANIMATING
+
+        data = self._animatorArtist.nextSegments()
+        if len(data):
+            for pos in range (len(data)):
+                self._display8.set_digit_raw(pos, data[pos])
+
+        if self._stateTitle in (DisplayStateMachineState.TEXT_UPDATED, DisplayStateMachineState.INIT):
+            self._animatorTitle = SegmentAlienIntroActiveSegmentOnlyAnimation(text = self.title, max_text_width=12)
+            self._stateTitle = DisplayStateMachineState.ANIMATING
+
+        data = self._animatorTitle.nextSegments()
+        if len(data):
+            for pos in range (len(data)):
+                self._display12.set_digit_raw(pos, data[pos])   
+
+
 class SegmentAlienIntro(SegmentBase):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -165,52 +191,3 @@ class SegmentAlienIntro(SegmentBase):
         if len(data):
             for pos in range (len(data)):
                 self._display12.set_digit_raw(pos, data[pos])   
-            
-            
-    
-class SegmentAlienIntro2(SegmentBase):
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self._mask8 : List[int] = []
-        '''Bitmask representing which characters in the current line have been revealed. Should be updated as the animation progresses.'''
-        self._segment_queue8 : List[int] = []
-        self._buffer12 : str = ""
-        self._queue12 : List[int] = []
-        self._delayCnt = 0
-
-    def display(self, pos: int, value: int) -> None:
-        self._display8.set_digit_raw(pos, value)
-
-    def _updateDisplay(self) -> None:
-        if self._stateArtist in (DisplayStateMachineState.TEXT_UPDATED, DisplayStateMachineState.INIT):
-            self._mask8 = self.string_to_char_mask("{:<8}".format(self.artist[:8])) # 
-            self._buffer8 = [0] * 8 # reset the buffer for the new line
-            self._segment_queue8 = list(range(0, 16)) # queue of character segments to reveal, shuffled to create the random effect
-            random.shuffle(self._segment_queue8)
-            self._stateArtist = DisplayStateMachineState.ANIMATING
-            #self._logger.debug(f"_mask8 {self._mask8} {self.artist[:8]:<8}")
-        if self._delayCnt > 0:
-            self._delayCnt -= 1
-            return
-        else:
-            self._delayCnt = 5
-        if self._stateArtist == DisplayStateMachineState.ANIMATING:
-            if len(self._segment_queue8) == 0:
-                self._stateArtist = DisplayStateMachineState.FINISHED
-                # self._display8.print(f"{self.artist:<8}")
-                # self._display12.print(f"{self.title:<12}")
-                self._running = False
-            else:
-                this_mask = 1 << self._segment_queue8.pop(0)
-                for pos in range (8):
-                    self._buffer8[pos] |= (self._mask8[pos] & this_mask)
-                    self._display8.set_digit_raw(pos, self._buffer8[pos])                    
-                
-                # pos = 0
-                
-                # for mask in self._buffer8:
-                #     self._buffer8[pos] = self._mask8[pos] | this_mask
-                #     self._display8.set_digit_raw(pos, self._buffer8[pos])
-                #     pos += 1
-                
-

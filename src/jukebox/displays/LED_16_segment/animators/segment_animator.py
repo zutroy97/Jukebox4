@@ -10,15 +10,17 @@ class SegmentAnimatorBase(animation.Animation):
     def __init__(self,  **kwargs) -> None:
         super().__init__(**kwargs)
 
-    def _get_char_pattern(self, char: str) -> int:
+    @staticmethod
+    def get_char_pattern(char: str) -> int:
         if not 32 <= ord(char) <= 127:
             return 0
         # TODO: Handle decimal points and commas, which are not currently supported by this mapping
         character = ord(char) * 2 - 64
-        return (self.CHARS[character]<<8)|self.CHARS[1 +character]
+        return (SegmentAnimatorBase.CHARS[character]<<8)|SegmentAnimatorBase.CHARS[1 +character]
     
-    def string_to_char_mask(self, s: str) -> List[int]:
-        return [self._get_char_pattern(ch) for ch in s]
+    @staticmethod
+    def string_to_char_mask(s: str) -> List[int]:
+        return [SegmentAnimatorBase.get_char_pattern(ch) for ch in s]
 
     @abstractmethod
     def nextSegments(self) -> List[int]:
@@ -123,6 +125,110 @@ class SegmentAnimatorBase(animation.Animation):
         0b00000101, 0b00100000,  # ~
         0b00111111, 0b11111111,
     )
+
+
+class SegmentAlienIntroActiveSegmentOnlyAnimation(SegmentAnimatorBase):
+    class States(Enum):
+        UNKNOWN = 0
+        WORD_DELAY = 1
+        ANIMATING = 2
+        FINISHED = 3
+
+    class SegmentCharData:
+        def __init__(self, char : str) -> None:
+            self.mask : List[int] = []
+            self.buffer = 0
+            self.character : str = char
+            self.pattern = SegmentAnimatorBase.get_char_pattern(char=self.character)
+            for i in range(15):
+                this_mask = 1 << i
+                if this_mask & self.pattern:
+                    self.mask.append(this_mask)
+            random.shuffle(self.mask)
+
+        def next(self) -> bool:
+            if len(self.mask) == 0:
+                return False
+            self.buffer |= (self.mask.pop(0) & self.pattern)
+            return True
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._args = kwargs
+        self._char_data = []
+        self._delaySegmentTicks = kwargs.get('delay_ticks', 5)
+        '''Number of elapsed ticks between animation updates'''
+        self._delaySegmentCnt : int = 0
+
+        self._max_text_width = kwargs.get('max_text_width', 4)
+        '''Number of Character/Digits in the display'''
+        self._generator = MultiLineGenerator(**kwargs)
+        
+        self._delayLineTicks = kwargs.get('delay_line_ticks', 200)
+        '''Number of ticks between displaying new lines on the display'''
+        self._delayLineCnt : int = 0
+
+        self._loop : bool = kwargs.get('loop_number', True)
+        '''Contiunelessly loop the message'''
+        self._state = self.States.ANIMATING
+        self._init(self._generator.next())
+        
+
+    def _init(self, text: str) -> None:
+        text = text.ljust(self._max_text_width, ' ')
+        self._char_data = self.str_to_SegmentCharData(text)
+
+
+    def str_to_SegmentCharData(self, input : str) -> List[SegmentCharData]:
+        # x = [ord(char) for char in list(input)]
+        # print(f"{len(input)}:{input} {list(input)} {x}")
+       
+        x = [self.SegmentCharData(char) for char in list(input)]
+        return x
+
+    def next(self) -> str:
+        return ''
+
+    def nextSegments(self)  -> List[int]:
+        if self._state == self.States.ANIMATING:
+            if self._delaySegmentCnt > 0:
+                self._delaySegmentCnt -= 1
+                return []
+            else:
+                self._delaySegmentCnt = self._delaySegmentTicks
+            render_cnt = 0
+            segments = []
+            for ren in self._char_data:
+                if ren.next():
+                    render_cnt += 1
+                segments.append(ren.buffer)
+
+            if render_cnt > 0:
+                return segments
+            else:
+                self.notify_observers(event="segment_finished" )
+                self._state = self.States.WORD_DELAY
+                self._delayLineCnt = self._delayLineTicks
+                if self._generator.is_finished:
+                    if self._loop and (self._max_text_width < len(self.text)):
+                        self._generator = MultiLineGenerator(**self._args)
+                    else:
+                        self._done = True
+                        self._state = self.States.FINISHED
+        elif self._state == self.States.WORD_DELAY:
+            if self._delayLineCnt > 0:
+                self._delayLineCnt -= 1
+            else:
+                self._init(self._generator.next())
+                self._state = self.States.ANIMATING
+                self._delaySegmentCnt = -1
+        return []
+
+
+
+
+
+
 
 class SegmentAlienIntroAnimation(SegmentAnimatorBase):
     class States(Enum):
