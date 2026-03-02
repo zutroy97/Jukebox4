@@ -40,7 +40,6 @@ class DisplayBase(ABC):
         if 'event' in kwargs:
             event = kwargs.get('event', ChangeEvents.UNKOWN)
             value = kwargs.get('value', '')
-            #self._logger.debug(f"Received update from observable. Event: {event} Value: {value}")
             if event == ChangeEvents.DIE:
                 self._running = False
             elif event == ChangeEvents.SONG_TITLE_CHANGED:
@@ -51,8 +50,6 @@ class DisplayBase(ABC):
                 self.song_artist_updated()
             elif event == ChangeEvents.TICK:
                 self._tick()
-                #self._ticks.value += 10
-                #self._updateDisplay()
 
     def __del__(self):
         #self.clear_screen()
@@ -61,28 +58,7 @@ class DisplayBase(ABC):
     def _tick(self) -> None:
         '''Advances the internal clock of the display. Should be called by the DisplayCoordinator on each tick.'''
         self._ticks.value += 10
-        #self._logger.debug(f"Ticks: {self._ticks.value} AlarmTicks: {self._alarmTicks.value}")
-        if (self._ticks.value >= self._alarmTicks.value or self._moveNextDisplayStart == True):
-            self._alarmTicks.value = self._ticks.value + self._minDwellTicks
-            self._moveNextDisplayStart = False
-            if self._displayState == DisplayInfoState.DRAWING_ARTIST:
-                self._displayState = DisplayInfoState.DRAWING_TITLE
-                self._stateArtist = DisplayStateMachineState.INIT
-            else:
-                self._displayState = DisplayInfoState.DRAWING_TITLE
-                self._stateTitle = DisplayStateMachineState.INIT
-
         self._updateDisplay()
-
-        if self._displayState == DisplayInfoState.DRAWING_ARTIST:
-            if self._stateArtist == DisplayStateMachineState.FINISHED:
-                self._moveNextDisplayStart = True
-        elif self._displayState == DisplayInfoState.DRAWING_TITLE:
-            if self._stateTitle == DisplayStateMachineState.FINISHED:
-                self._moveNextDisplayStart = True
-        else:
-            self._moveNextDisplayStart = True        
-
 
     # def _refresh(self) -> None:
     #     #self._logger.debug(f"Ticks: {self._ticks.value} AlarmTicks: {self._alarmTicks.value}")

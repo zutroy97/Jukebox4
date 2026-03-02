@@ -9,7 +9,7 @@ import board
 import asyncio
 
 #from jukebox.displays.console.random_typewriter import RandomTypewriter as ConsoleRandomTypewriter
-from jukebox.displays.LED_16_segment.segment_base import SegmentAlienIntro, SegmentAlienIntroActiveSegmentOnlyDisplay
+from jukebox.displays.LED_16_segment.segment_alien_intro_active_segment_only_display import SegmentAlienIntroActiveSegmentOnlyDisplay
 from jukebox.displays.console.random_typewriter import DisplayConsoleRandomTypewriter
 #from jukebox.displays.console.simple import Simple as ConsoleSimple
 from jukebox.displays.LED_16_segment.segment_scroller import SegmentScroller    
@@ -41,7 +41,7 @@ async def main():
     #led_display = SegmentSimple()
     #led_display = SegmentScroller()
     #display = ConsoleSimple(max_text_width=12)
-    display = SegmentAlienIntroActiveSegmentOnlyDisplay()
+    display = SegmentAlienIntroActiveSegmentOnlyDisplay(segment_delay_ticks=5)
     subject.add_observer(display)
     #subject.add_observer(led_display)
     async with asyncio.TaskGroup() as tg:

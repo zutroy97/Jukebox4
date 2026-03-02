@@ -1,14 +1,7 @@
 import logging
-import random
 from busio import I2C
 import board
-from typing import Dict, List, Optional, Tuple, Union
-import asyncio
 from adafruit_ht16k33 import segments
-
-
-from jukebox.displays.LED_16_segment.animators.segment_animator import SegmentAlienIntroAnimation, SegmentAlienIntroActiveSegmentOnlyAnimation
-from jukebox.displays.common.common_enums import DisplayStateMachineState
 from jukebox.displays.common.display_base import DisplayBase
 
 class SegmentBase(DisplayBase):
@@ -130,64 +123,3 @@ class SegmentBase(DisplayBase):
     def _updateDisplay(self) -> None:
         self._display8.print(f"{self.artist:<8}")
         self._display12.print(f"{self.title:<12}")
-
-    def _get_char_pattern(self, char: str) -> int:
-        if not 32 <= ord(char) <= 127:
-            return 0
-        # TODO: Handle decimal points and commas, which are not currently supported by this mapping
-        character = ord(char) * 2 - 64
-        return (self.CHARS[character]<<8)|self.CHARS[1 +character]
-    
-    def string_to_char_mask(self, s: str) -> List[int]:
-        return [self._get_char_pattern(ch) for ch in s]
-
-class SegmentAlienIntroActiveSegmentOnlyDisplay(SegmentBase):
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self._animatorArtist : SegmentAlienIntroActiveSegmentOnlyAnimation
-        self._animatorTitle : SegmentAlienIntroActiveSegmentOnlyAnimation
-    
-    def _updateDisplay(self) -> None:
-        if self._stateArtist in (DisplayStateMachineState.TEXT_UPDATED, DisplayStateMachineState.INIT):
-            self._animatorArtist = SegmentAlienIntroActiveSegmentOnlyAnimation(text = self.artist, max_text_width=8)
-            self._stateArtist = DisplayStateMachineState.ANIMATING
-
-        data = self._animatorArtist.nextSegments()
-        if len(data):
-            for pos in range (len(data)):
-                self._display8.set_digit_raw(pos, data[pos])
-
-        if self._stateTitle in (DisplayStateMachineState.TEXT_UPDATED, DisplayStateMachineState.INIT):
-            self._animatorTitle = SegmentAlienIntroActiveSegmentOnlyAnimation(text = self.title, max_text_width=12)
-            self._stateTitle = DisplayStateMachineState.ANIMATING
-
-        data = self._animatorTitle.nextSegments()
-        if len(data):
-            for pos in range (len(data)):
-                self._display12.set_digit_raw(pos, data[pos])   
-
-
-class SegmentAlienIntro(SegmentBase):
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self._animatorArtist : SegmentAlienIntroAnimation
-        self._animatorTitle : SegmentAlienIntroAnimation
-    
-    def _updateDisplay(self) -> None:
-        if self._stateArtist in (DisplayStateMachineState.TEXT_UPDATED, DisplayStateMachineState.INIT):
-            self._animatorArtist = SegmentAlienIntroAnimation(text = self.artist, max_text_width=8)
-            self._stateArtist = DisplayStateMachineState.ANIMATING
-
-        data = self._animatorArtist.nextSegments()
-        if len(data):
-            for pos in range (len(data)):
-                self._display8.set_digit_raw(pos, data[pos])
-
-        if self._stateTitle in (DisplayStateMachineState.TEXT_UPDATED, DisplayStateMachineState.INIT):
-            self._animatorTitle = SegmentAlienIntroAnimation(text = self.title, max_text_width=12)
-            self._stateTitle = DisplayStateMachineState.ANIMATING
-
-        data = self._animatorTitle.nextSegments()
-        if len(data):
-            for pos in range (len(data)):
-                self._display12.set_digit_raw(pos, data[pos])   
