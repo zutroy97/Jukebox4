@@ -7,6 +7,7 @@ import asyncio
 from adafruit_ht16k33 import segments
 
 
+from jukebox.displays.LED_16_segment.animators.segment_animator import SegmentAlienIntroAnimation
 from jukebox.displays.common.common_enums import DisplayStateMachineState
 from jukebox.displays.common.display_base import DisplayBase
 
@@ -141,6 +142,33 @@ class SegmentBase(DisplayBase):
         return [self._get_char_pattern(ch) for ch in s]
 
 class SegmentAlienIntro(SegmentBase):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._animatorArtist : SegmentAlienIntroAnimation
+        self._animatorTitle : SegmentAlienIntroAnimation
+    
+    def _updateDisplay(self) -> None:
+        if self._stateArtist in (DisplayStateMachineState.TEXT_UPDATED, DisplayStateMachineState.INIT):
+            self._animatorArtist = SegmentAlienIntroAnimation(text = self.artist, max_text_width=8)
+            self._stateArtist = DisplayStateMachineState.ANIMATING
+
+        data = self._animatorArtist.nextSegments()
+        if len(data):
+            for pos in range (len(data)):
+                self._display8.set_digit_raw(pos, data[pos])
+
+        if self._stateTitle in (DisplayStateMachineState.TEXT_UPDATED, DisplayStateMachineState.INIT):
+            self._animatorTitle = SegmentAlienIntroAnimation(text = self.title, max_text_width=12)
+            self._stateTitle = DisplayStateMachineState.ANIMATING
+
+        data = self._animatorTitle.nextSegments()
+        if len(data):
+            for pos in range (len(data)):
+                self._display12.set_digit_raw(pos, data[pos])   
+            
+            
+    
+class SegmentAlienIntro2(SegmentBase):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._mask8 : List[int] = []
