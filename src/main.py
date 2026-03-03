@@ -3,15 +3,13 @@ from jukebox.coordinator.display_coordinator import DisplayCoordinator
 
 from busio import I2C
 import board
-# from adafruit_ht16k33 import segments
-
-#from typing import Dict, List, Optional, Tuple, Union
 import asyncio
 
 #from jukebox.displays.console.random_typewriter import RandomTypewriter as ConsoleRandomTypewriter
 from jukebox.displays.LED_16_segment.segment_alien_intro_active_segment_only_display import SegmentAlienIntroActiveSegmentOnlyDisplay
+from jukebox.displays.LED_16_segment.segment_simple import SegmentSimple
 from jukebox.displays.console.random_typewriter import DisplayConsoleRandomTypewriter
-#from jukebox.displays.console.simple import Simple as ConsoleSimple
+from jukebox.displays.console.simple import Simple as ConsoleSimple
 from jukebox.displays.LED_16_segment.segment_scroller import SegmentScroller    
 
 async def wait_and_stop(coor: DisplayCoordinator, delay: float) -> None:
@@ -36,10 +34,9 @@ async def main():
     logging.basicConfig(level=logging.DEBUG)
 
     subject = DisplayCoordinator()
-#    display = ConsoleRandomTypewriter(max_text_width=12)
     #display = DisplayConsoleRandomTypewriter(max_text_width=12)
-    #led_display = SegmentSimple()
-    #led_display = SegmentScroller()
+    #display = SegmentSimple()
+    #display = SegmentScroller()
     #display = ConsoleSimple(max_text_width=12)
     display = SegmentAlienIntroActiveSegmentOnlyDisplay(segment_delay_ticks=5)
     subject.add_observer(display)
@@ -55,10 +52,3 @@ async def main():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     asyncio.run(main())
-#     display = SegmentAlienIntro(text = 'Scott')
-#     print(f"A) {display._get_char_pattern('A'):b} {display._get_char_pattern('A')}")
-#     print(f"B) {display._get_char_pattern('B'):b} {display._get_char_pattern('B')}")
-#     print(f"C) {display._get_char_pattern('C'):b} {display._get_char_pattern('C')}")
-#     print(f"ABC {display.string_to_char_mask('ABC')}")
-# #    display.display(0, display._get_char_pattern('A'))
- #   display.display(1, display._get_char_pattern('B')
