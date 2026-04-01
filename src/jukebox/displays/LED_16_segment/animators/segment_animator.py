@@ -72,9 +72,15 @@ class SegmentAlienIntroActiveSegmentOnlyAnimation(SegmentAnimatorBase):
 
         self._loop : bool = kwargs.get('loop_number', True)
         '''Contiunelessly loop the message'''
-        self._state = self.States.ANIMATING
-        self._init(self._generator.next())
+        self.reset()
         
+
+    def reset(self) -> None:
+        self._generator.reset()
+        self._init(self._generator.next())
+        self._state = self.States.ANIMATING
+        self._delaySegmentCnt = 0
+        self._done = False
 
     def _init(self, text: str) -> None:
         text = text.ljust(self._max_text_width, ' ')

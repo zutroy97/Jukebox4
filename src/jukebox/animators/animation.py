@@ -18,6 +18,11 @@ class Animation(ABC):
     def next(self) -> str:
         '''Advances the animation by one step and returns the current state of the text.'''
         pass
+
+    @abstractmethod
+    def reset(self) -> None:
+        '''Resets the animation to its initial state.'''
+        pass
     
     @property
     def is_finished(self) -> bool:
