@@ -43,7 +43,7 @@ class MultiLineGenerator(TextAnimatorBase):
         self.Restart()
 
     def Restart(self) -> None:
-        self._lines = textwrap.wrap(self.text, width=self.max_text_width, expand_tabs=False)
+        self._lines = textwrap.wrap(self.text, width=self.max_text_width, expand_tabs=False, drop_whitespace=True)
         self._done = False
 
     def Next(self) -> bool:
@@ -100,7 +100,7 @@ class Slide(TextAnimatorBase):
         self.Restart()
     
     def Restart(self) -> None:
-        self._position = 0
+        self._position = 1
         self._text = self.text[:self.max_text_width] # truncate text to max width if necessary
 
     def Next(self) -> bool:
@@ -114,8 +114,7 @@ class Slide(TextAnimatorBase):
         return result 
 
 # if __name__ == "__main__":
-#     anim = Slide(text="Hello there! My name is Slim Shady.", max_text_width=10)
-    
+#     anim = Slide(text="0123456789ABCDEF", max_text_width=10)
 #     while anim.Next():
 #         print(anim.GetText())
 #     print('-' * anim.max_text_width)
@@ -132,22 +131,22 @@ class TestAnimation(TextAnimatorBase):
         self._mlGenerator = MultiLineGenerator(**self._args)
         self._slide = Slide(max_text_width = self.max_text_width, text=self._mlGenerator.GetText())
 
-
     def Next(self) -> bool:
         '''Returns true if more data is available'''
         return self._mlGenerator.Next() or self._slide.Next()
 
     def GetText(self) -> str:
         if self._slide.Next():
-            return self._slide.GetText()
+            text = self._slide.GetText()
+            return f"|{text}|"
         if self._mlGenerator.Next():
             self._slide = Slide(max_text_width = self.max_text_width, text=self._mlGenerator.GetText())
-            return self._slide.GetText()
+            text = self._slide.GetText()
+            return f"`{text}`"
         return '*'
         
 if __name__ == "__main__":
     anim = TestAnimation(text="Hello there! My name is Slim Shady.", max_text_width=10)
-    
     while anim.Next():
         print(anim.GetText())
     print('-' * anim.max_text_width)        
