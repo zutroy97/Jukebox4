@@ -145,8 +145,54 @@ class TestAnimation(TextAnimatorBase):
             return f"`{text}`"
         return '*'
         
+# if __name__ == "__main__":
+#     anim = TestAnimation(text="Hello there! My name is Slim Shady.", max_text_width=10)
+#     while anim.Next():
+#         print(anim.GetText())
+#     print('-' * anim.max_text_width)        
+
+from typing import Type, TypeVar
+from collections.abc import Callable
+class TestAnimationLink():
+    def __init__(self, anim_type: Type[TextAnimatorBase], onFinished: Callable[[TextAnimatorBase], None]) -> None:
+        self._anim_type = anim_type
+        self._onFinished = onFinished
+   
+
+class TestAnimation2(TextAnimatorBase):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._links : list[TestAnimationLink] = kwargs.get('links', [])
+        self._args = kwargs
+        self._animators : list[TextAnimatorBase] = []
+        print(f"Chain: {[link._anim_type.__name__ for link in self._links]}")
+
+        self.Restart()
+
+    def Restart(self) -> None:
+        self._animators.append(self._links[0]._anim_type(text=self.text, max_text_width=self.max_text_width))
+        for position in range(1, len(self._links)):
+            self._animators.append(
+                self._links[position]._anim_type(text=self._animators[position-1].GetText()
+                , max_text_width=self.max_text_width)
+            )
+        print(f"AnimInitStates: {[anim.text for anim in self._animators]}")
+
+    def Next(self) -> bool:
+        '''Returns true if more data is available'''
+        return any(anim.Next() for anim in self._animators)
+
+    def GetText(self) -> str:
+        for position in range(len(self._animators)-1, 0, -1):
+            if self._animators[position].Next():
+                return self._animators[position].GetText()
+
+from time import sleep
 if __name__ == "__main__":
-    anim = TestAnimation(text="Hello there! My name is Slim Shady.", max_text_width=10)
+    links = [TestAnimationLink(MultiLineGenerator, lambda anim: print("MultiLineGenerator finished!")),
+             TestAnimationLink(Slide, lambda anim: print("Slide finished!"))]
+    anim = TestAnimation2(links=links, text="Hello there! My name is Slim Shady.", max_text_width=20)
     while anim.Next():
         print(anim.GetText())
-    print('-' * anim.max_text_width)        
+        sleep(0.1)
+    print('-' * anim.max_text_width)                
