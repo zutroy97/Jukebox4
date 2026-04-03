@@ -119,98 +119,58 @@ class Slide(TextAnimatorBase):
 #         print(anim.GetText())
 #     print('-' * anim.max_text_width)
 
-class TestAnimation(TextAnimatorBase):
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self._args = kwargs
-        self._mlGenerator : TextAnimatorBase = MultiLineGenerator(**kwargs)
-        self._slide : TextAnimatorBase = Slide(**kwargs)
-        self.Restart()
-
-    def Restart(self) -> None:
-        self._mlGenerator = MultiLineGenerator(**self._args)
-        self._slide = Slide(max_text_width = self.max_text_width, text=self._mlGenerator.GetText())
-
-    def Next(self) -> bool:
-        '''Returns true if more data is available'''
-        return self._mlGenerator.Next() or self._slide.Next()
-
-    def GetText(self) -> str:
-        if self._slide.Next():
-            text = self._slide.GetText()
-            return f"|{text}|"
-        if self._mlGenerator.Next():
-            self._slide = Slide(max_text_width = self.max_text_width, text=self._mlGenerator.GetText())
-            text = self._slide.GetText()
-            return f"`{text}`"
-        return '*'
-        
-# if __name__ == "__main__":
-#     anim = TestAnimation(text="Hello there! My name is Slim Shady.", max_text_width=10)
-#     while anim.Next():
-#         print(anim.GetText())
-#     print('-' * anim.max_text_width)        
-
 from typing import Type, TypeVar
 from collections.abc import Callable
-class TestAnimationLink():
-    def __init__(self, anim_type: Type[TextAnimatorBase], onFinished: Callable[[TextAnimatorBase], None]) -> None:
+class AnimationChainLink():
+    def __init__(self, anim_type: Type[TextAnimatorBase], onFinished: Callable[[TextAnimatorBase], bool]) -> None:
         self._anim_type = anim_type
         self._onFinished = onFinished
-   
 
-class TestAnimation2(TextAnimatorBase):
+class AnimationChain(TextAnimatorBase):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self._links : list[TestAnimationLink] = kwargs.get('links', [])
+        self._links : list[AnimationChainLink] = kwargs.get('links', [])
         self._args = kwargs
         self._animators : list[TextAnimatorBase] = []
-        print(f"Chain: {[link._anim_type.__name__ for link in self._links]}")
-
         self.Restart()
 
     def Restart(self) -> None:
-        # self._animators.append(self._links[0]._anim_type(text=self.text, max_text_width=self.max_text_width))
-        # for position in range(1, len(self._links)):
-        #     self._animators.append(
-        #         self._links[position]._anim_type(text=self._animators[position-1].GetText()
-        #         , max_text_width=self.max_text_width)
-        #     )
-        self._setupAnimations()
-        #print(f"AnimInitStates: {[anim.text for anim in self._animators]}")
+        self._animators = []
+        self._animators.append(self._links[0]._anim_type(text=self.text, max_text_width=self.max_text_width))
+        self._initAnimation(1)
 
     def Next(self) -> bool:
         '''Returns true if more data is available'''
         return any(anim.Next() for anim in self._animators)
 
     def GetText(self) -> str:
-        for position in range(len(self._animators)-1, 0, -1):
-            if self._animators[position].Next():
-                return self._animators[position].GetText()
+        return self._fetchNextText(len(self._animators)-1)
 
-    def _setupAnimations(self, index: int = 0) -> None:
-        if index == 0:
-            self._animators = []
-            self._animators.append(self._links[index]._anim_type(text=self.text, max_text_width=self.max_text_width))
-            self._setupAnimations(index+1)
-            return
+    def _fetchNextText(self, index :int) -> str:
+        if index < 0:
+            return None
+        anim = self._animators[index]
+        if False == anim.Next():
+            parentText = self._fetchNextText(index-1)
+            if parentText == None:
+                return None
+            anim = self._links[index]._anim_type(text=parentText, max_text_width=self.max_text_width)
+            self._animators[index]=anim
+        return anim.GetText()
+
+    def _initAnimation(self, index: int) -> None:
         if index < len(self._links):
             self._animators.append(self._links[index]._anim_type(text=self._animators[index-1].GetText()
                 , max_text_width=self.max_text_width))
-            self._setupAnimations(index+1)
+            self._initAnimation(index+1)
         return
-    
-    def _setupNextText(self, index: int = -1):
-        if index == -1:
-            index= len(self._animators)
-        
 
 from time import sleep
 if __name__ == "__main__":
-    links = [TestAnimationLink(MultiLineGenerator, lambda anim: print("MultiLineGenerator finished!")),
-             TestAnimationLink(Slide, lambda anim: print("Slide finished!"))]
-    anim = TestAnimation2(links=links, text="Hello there! My name is Slim Shady.", max_text_width=20)
+    links = [AnimationChainLink(MultiLineGenerator, onFinished= [[lambda anim: print("MultiLineGenerator finished!")], True]),
+             AnimationChainLink(RandomTypeWriter, onFinished=[[lambda anim: print("Slide finished!")], True])]
+    anim = AnimationChain(links=links, text="Hello there! My name is Slim Shady.", max_text_width=10)
     while anim.Next():
         print(anim.GetText())
         sleep(0.1)
-    print('-' * anim.max_text_width)                
+    print('-' * anim.max_text_width)
