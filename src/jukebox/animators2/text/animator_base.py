@@ -170,13 +170,14 @@ class TestAnimation2(TextAnimatorBase):
         self.Restart()
 
     def Restart(self) -> None:
-        self._animators.append(self._links[0]._anim_type(text=self.text, max_text_width=self.max_text_width))
-        for position in range(1, len(self._links)):
-            self._animators.append(
-                self._links[position]._anim_type(text=self._animators[position-1].GetText()
-                , max_text_width=self.max_text_width)
-            )
-        print(f"AnimInitStates: {[anim.text for anim in self._animators]}")
+        # self._animators.append(self._links[0]._anim_type(text=self.text, max_text_width=self.max_text_width))
+        # for position in range(1, len(self._links)):
+        #     self._animators.append(
+        #         self._links[position]._anim_type(text=self._animators[position-1].GetText()
+        #         , max_text_width=self.max_text_width)
+        #     )
+        self._setupAnimations()
+        #print(f"AnimInitStates: {[anim.text for anim in self._animators]}")
 
     def Next(self) -> bool:
         '''Returns true if more data is available'''
@@ -186,6 +187,23 @@ class TestAnimation2(TextAnimatorBase):
         for position in range(len(self._animators)-1, 0, -1):
             if self._animators[position].Next():
                 return self._animators[position].GetText()
+
+    def _setupAnimations(self, index: int = 0) -> None:
+        if index == 0:
+            self._animators = []
+            self._animators.append(self._links[index]._anim_type(text=self.text, max_text_width=self.max_text_width))
+            self._setupAnimations(index+1)
+            return
+        if index < len(self._links):
+            self._animators.append(self._links[index]._anim_type(text=self._animators[index-1].GetText()
+                , max_text_width=self.max_text_width))
+            self._setupAnimations(index+1)
+        return
+    
+    def _setupNextText(self, index: int = -1):
+        if index == -1:
+            index= len(self._animators)
+        
 
 from time import sleep
 if __name__ == "__main__":
