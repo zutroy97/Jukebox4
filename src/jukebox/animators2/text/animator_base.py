@@ -122,7 +122,9 @@ class Slide(TextAnimatorBase):
 from typing import Type, TypeVar
 from collections.abc import Callable
 class AnimationChainLink():
-    def __init__(self, anim_type: Type[TextAnimatorBase], onFinished: Callable[[TextAnimatorBase], bool]) -> None:
+    def __init__(self, anim_type: Type[TextAnimatorBase], onFinished: Callable[[TextAnimatorBase], bool] | None = None) -> None:
+        if onFinished is not None and not callable(onFinished):
+            raise TypeError("onFinished must be callable or None")
         self._anim_type = anim_type
         self._onFinished = onFinished
 
@@ -151,6 +153,11 @@ class AnimationChain(TextAnimatorBase):
             return None
         anim = self._animators[index]
         if False == anim.Next():
+            link = self._links[index]
+            if link._onFinished:
+                result = link._onFinished(anim)
+                if False == result:
+                    return None
             parentText = self._fetchNextText(index-1)
             if parentText == None:
                 return None
@@ -166,9 +173,19 @@ class AnimationChain(TextAnimatorBase):
         return
 
 from time import sleep
+
 if __name__ == "__main__":
-    links = [AnimationChainLink(MultiLineGenerator, onFinished= [[lambda anim: print("MultiLineGenerator finished!")], True]),
-             AnimationChainLink(RandomTypeWriter, onFinished=[[lambda anim: print("Slide finished!")], True])]
+    links = [
+        AnimationChainLink(
+            MultiLineGenerator,
+            onFinished=lambda anim: (print("MultiLineGenerator finished!"), True)[1]
+        ),
+        AnimationChainLink(
+            RandomTypeWriter,
+            onFinished=lambda anim: (print("RandomTypeWriter finished!"), True)[1]
+        )
+    ]
+
     anim = AnimationChain(links=links, text="Hello there! My name is Slim Shady.", max_text_width=10)
     while anim.Next():
         print(anim.GetText())
