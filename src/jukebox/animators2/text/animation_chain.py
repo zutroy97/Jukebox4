@@ -1,7 +1,8 @@
 from typing import Type, TypeVar, Awaitable
 from collections.abc import Callable
 
-from animator_base import TextAnimatorBase
+from jukebox.animators2.text.animator_base import TextAnimatorBase
+
 import asyncio
 
 class AnimationChainLink():
@@ -14,7 +15,7 @@ class AnimationChainLink():
 class AnimationChain(TextAnimatorBase):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self._links : list[AnimationChainLink2] = kwargs.get('links', [])
+        self._links : list[AnimationChainLink] = kwargs.get('links', [])
         self._args = kwargs
         self._animators : list[TextAnimatorBase] = []
 
@@ -63,35 +64,35 @@ class AnimationChain(TextAnimatorBase):
         return
 
 
-from time import sleep
-from multiline_generator import MultiLineGenerator
-from random_typewriter import RandomTypeWriter
-from slide import Slide
+# from time import sleep
+# from multiline_generator import MultiLineGenerator
+# from random_typewriter import RandomTypeWriter
+# from slide import Slide
 
-async def main():
-    async def on_multiline_finished(anim: TextAnimatorBase) -> bool:
-        print("MultiLineGenerator finished!")
-        await asyncio.sleep(1) # wait a bit before starting the next animation
-        return True
+# async def main():
+#     async def on_multiline_finished(anim: TextAnimatorBase) -> bool:
+#         print("MultiLineGenerator finished!")
+#         await asyncio.sleep(1) # wait a bit before starting the next animation
+#         return True
 
-    async def on_random_typewriter_finished(anim: TextAnimatorBase) -> bool:
-        print("Slide finished!")
-        await asyncio.sleep(1) # wait a bit before starting the next animation
-        return True
+#     async def on_random_typewriter_finished(anim: TextAnimatorBase) -> bool:
+#         print("Slide finished!")
+#         await asyncio.sleep(1) # wait a bit before starting the next animation
+#         return True
 
-    links = [
-        # AnimationChainLink(MultiLineGenerator, onFinished=on_multiline_finished),
-        AnimationChainLink(MultiLineGenerator),
-        AnimationChainLink(Slide, onFinished=on_random_typewriter_finished),
-    ]
+#     links = [
+#         # AnimationChainLink(MultiLineGenerator, onFinished=on_multiline_finished),
+#         AnimationChainLink(MultiLineGenerator),
+#         AnimationChainLink(Slide, onFinished=on_random_typewriter_finished),
+#     ]
 
-    anim = AnimationChain(links=links, text="Hello there! My name is Slim Shady.", max_text_width=12)
-    await anim.Start()
-    while await anim.Next():
-        print(await anim.GetText())
-        await asyncio.sleep(0.1)
+#     anim = AnimationChain(links=links, text="Hello there! My name is Slim Shady.", max_text_width=12)
+#     await anim.Start()
+#     while await anim.Next():
+#         print(await anim.GetText())
+#         await asyncio.sleep(0.1)
 
-    print('-' * anim.max_text_width)
+#     print('-' * anim.max_text_width)
 
-if __name__ == "__main__":
-    asyncio.run(main())        
+# if __name__ == "__main__":
+#     asyncio.run(main())        

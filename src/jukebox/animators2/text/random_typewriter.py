@@ -1,5 +1,5 @@
 import random
-from animator_base import TextAnimatorBase
+from jukebox.animators2.text.animator_base import TextAnimatorBase
 import asyncio
 
 class RandomTypeWriter(TextAnimatorBase):

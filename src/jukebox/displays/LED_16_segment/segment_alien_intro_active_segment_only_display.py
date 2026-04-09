@@ -11,7 +11,7 @@ class SegmentAlienIntroActiveSegmentOnlyDisplay(SegmentBase):
     
     def _updateDisplay(self) -> None:
         if self._stateArtist in (DisplayStateMachineState.TEXT_UPDATED, DisplayStateMachineState.INIT):
-            #self._logger.debug(f"_stateArtist: {self._stateArtist} : {self.artist}")
+            self._logger.debug(f"_stateArtist: {self._stateArtist} : {self.artist}")
             self._animatorArtist = SegmentAlienIntroActiveSegmentOnlyAnimation(text = self.artist, max_text_width=8)
             self._stateArtist = DisplayStateMachineState.ANIMATING
 

@@ -38,7 +38,7 @@ class DisplayCoordinator:
     def song_title(self, title: str) -> None:
         if title.strip() != self._title:
             self._title = title.strip()
-            #self._logger.debug(f"Title updated to: {self._title}")
+            self._logger.debug(f"Title updated to: {self._title}")
             self.notify_observers(event=ChangeEvents.SONG_TITLE_CHANGED, value=self._title)
     
     @property

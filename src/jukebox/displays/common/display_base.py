@@ -32,6 +32,7 @@ class DisplayBase(ABC):
     
     def song_title_updated(self) -> None:
         self._stateTitle = DisplayStateMachineState.TEXT_UPDATED
+        #self._logger.debug(f"Title updated to: {self._title}")
     def song_artist_updated(self) -> None:
         self._stateArtist = DisplayStateMachineState.TEXT_UPDATED
 
@@ -58,7 +59,7 @@ class DisplayBase(ABC):
     def _tick(self) -> None:
         '''Advances the internal clock of the display. Should be called by the DisplayCoordinator on each tick.'''
         self._ticks.value += 10
-        self._updateDisplay()
+        #self._updateDisplay()
 
     @abstractmethod
     def _updateDisplay(self) -> None:
@@ -66,7 +67,7 @@ class DisplayBase(ABC):
         pass
 
     @abstractmethod
-    def clear_screen(self) -> None:
+    async def clear_screen(self) -> None:
         '''Subclasses can implement this method to clear the display'''
         pass
 
