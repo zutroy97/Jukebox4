@@ -32,22 +32,28 @@ class AnimationChain(TextAnimatorBase):
 
     async def _nextCheck(self, index: int) -> bool:
         if index < 0:
+            #self._logger.debug(f"Index {index} is out of range, returning False")
             return False
         anim = self._animators[index]
         if await anim.Next():
+            #self._logger.debug(f"Animation at index {index} has more data available")
             return True
         link = self._links[index]
         if link._onFinished:
+            #self._logger.debug(f"Checking onFinished callback for animation at index {index}")
             result = await link._onFinished(anim)
             if False == result:
                 return False
         parentNextResult = await self._nextCheck(index-1)
+        #self._logger.debug(f"Parent next result for animation at index {index}: {parentNextResult}")
         if True == parentNextResult:
             parentText = await self._animators[index-1].GetText()
             anim = self._links[index]._anim_type(text=parentText, max_text_width=self.max_text_width)
             await anim.Start()
             self._animators[index]=anim
             return True
+        
+        #self._logger.debug(f"Animation at index {index} has no more data available")
         return False
 
 

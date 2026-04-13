@@ -19,6 +19,7 @@ class VFDBase(DisplayBase):
         self._ser = serial.Serial(port, baudrate=baud, timeout=1)
         self._last_write = None
         self._running = True
+        self.set_brightness(0) # set brightness to 0 on startup to prevent display burn-in when not in use
     
     async def clear_screen(self) -> None:
         self._ser.write(b'\x1e') # clear screen
@@ -63,10 +64,16 @@ from jukebox.animators2.text.multiline_generator import MultiLineGenerator
 
 class VFDSimple(VFDBase):
     async def on_title_line_displayed(self, anim: TextAnimatorBase) -> bool:
-        await asyncio.sleep(1) # wait for the line to be fully displayed before starting the timer
-        # self._next_title_update = datetime.now() + timedelta(seconds=2) # display each line for 5 seconds
-        # self._logger.debug(f"Title line displayed, setting next update to {self._next_title_update} at {datetime.now()} {await anim.GetText()}")
+        #await asyncio.sleep(1) # wait for the line to be fully displayed before starting the timer
+        self._next_title_update = datetime.now() + timedelta(seconds=2) # display each line for 5 seconds
+        self._stateTitle = DisplayStateMachineState.DELAY_START
+        self._logger.debug(f"{ self._stateTitle}, setting next update to {self._next_title_update} ")
         return True
+
+    # async def on_artist_line_displayed(self, anim: TextAnimatorBase) -> bool:
+    #     #await asyncio.sleep(1) # wait for the line to be fully displayed before starting the timer
+    #     return True
+
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -81,7 +88,6 @@ class VFDSimple(VFDBase):
             AnimationChainLink(Slide, onFinished=self.on_title_line_displayed),
         ]
         self._title_anim = AnimationChain(links=self._links_title_animation, text='', max_text_width=20)
-        self._title_anim_skip_this_loop = False
 
     async def loop(self) -> None:
         while self._running:
@@ -92,14 +98,45 @@ class VFDSimple(VFDBase):
                 self._next_title_update = datetime.now()
                 self._stateTitle = DisplayStateMachineState.ANIMATING
 
-            if self._next_title_update < datetime.now() and self._stateTitle == DisplayStateMachineState.ANIMATING:
-                if (await self._title_anim.Next()):
-                    #self._logger.debug(f"self._next_title_update {self._next_title_update} ** {datetime.now()} ")
-                    self.set_position(0, 0)
-                    self._ser.write((await self._title_anim.GetText()).encode('ascii'))
-                    self._next_title_update = datetime.now() + timedelta(milliseconds=100)
-                else:
-                    await self._title_anim.Start() # restart the animation
-                    self._next_title_update = datetime.now() + timedelta(seconds=1)
-                    #self._running = False # stop the loop for testing purposes
+            if self._next_title_update < datetime.now():
+                self._logger.debug(f"TICK: {self._stateTitle} : {self._next_title_update}")
+                if self._stateTitle == DisplayStateMachineState.ANIMATING:
+                    if (await self._title_anim.Next()):
+                        # onFinished callback just changes the state to DELAY_START
+                        if self._stateTitle == DisplayStateMachineState.DELAY_START:
+                            pass
+                        else:
+                            self.set_position(0, 0)
+                            text = await self._title_anim.GetText()
+                            #self._logger.debug(f"Updating title line to: {text}")
+                            self._ser.write(text.encode('ascii'))
+                            self._next_title_update = datetime.now() + timedelta(milliseconds=100)
+                    else:
+                        if len(self.title) > self._title_anim.max_text_width:
+                            await self._title_anim.Start() # restart the animation
+                            self._next_title_update = datetime.now() + timedelta(seconds=1)
+                            #self._running = False # stop the loop for testing purposes
+                elif self._stateTitle == DisplayStateMachineState.DELAY_START:
+                    self._stateTitle = DisplayStateMachineState.ANIMATING
+
+            # if self._stateArtist in (DisplayStateMachineState.TEXT_UPDATED, DisplayStateMachineState.INIT):
+            #     self._artist_anim = AnimationChain(links=self._links_artist_animation, text=self.artist, max_text_width=20)
+            #     await self._artist_anim.Start()
+            #     self._next_artist_update = datetime.now()
+            #     self._stateArtist = DisplayStateMachineState.ANIMATING
+
+            # if self._stateArtist == DisplayStateMachineState.DELAY_START:
+            #     if self._next_artist_update < datetime.now():
+            #         self._stateArtist = DisplayStateMachineState.ANIMATING
+
+            # if self._next_artist_update < datetime.now() and self._stateArtist == DisplayStateMachineState.ANIMATING:
+            #     if (await self._artist_anim.Next()):
+            #         self.set_position(0, 1)
+            #         self._ser.write((await self._artist_anim.GetText()).encode('ascii'))
+            #         self._next_artist_update = datetime.now() + timedelta(milliseconds=100)
+            #     else:
+            #         await self._artist_anim.Start() # restart the animation
+            #         self._next_artist_update = datetime.now() + timedelta(seconds=1)
+            #         #self._running = False # stop the loop for testing purposes
+
             await asyncio.sleep(0.010)
