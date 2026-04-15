@@ -36,6 +36,9 @@ class VFDBase(DisplayBase):
         column = column + (row * 20)
         self._ser.write(b'\x10' + bytes([column]))
 
+    def write_bytes(self, data: bytes) -> None:
+        self._ser.write(data)
+
     def clear_to_eol(self) -> None:
         '''This command will clear out the display from the current write-in position to the
 end of the current line. The current write-in position will not change. '''
@@ -139,4 +142,78 @@ class VFDSimple(VFDBase):
             #         self._next_artist_update = datetime.now() + timedelta(seconds=1)
             #         #self._running = False # stop the loop for testing purposes
 
+            await asyncio.sleep(0.010)
+
+class VFDTest(VFDBase):
+    class VFDLineAnimator():
+        async def _on_line_displayed(self, anim: TextAnimatorBase) -> bool:
+            #await asyncio.sleep(1) # wait for the line to be fully displayed before starting the timer
+            self._next_update_after = datetime.now() + timedelta(seconds=2) # display each line for 5 seconds
+            self._state = DisplayStateMachineState.DELAY_START
+            return True
+            
+        def __init__(self, vfd: VFDBase, line: int):
+            self._vfd : VFDBase = vfd
+            self._line = line
+            self._next_update_after : datetime = datetime.now() + timedelta(days=3600)
+            self._links_animation = [
+                AnimationChainLink(MultiLineGenerator),
+                AnimationChainLink(Slide, onFinished=self._on_line_displayed),
+            ]
+            
+            self._state = DisplayStateMachineState.IDLE
+            self._text = ""
+        
+        def set_text(self, text: str) -> None:
+            self._text = text
+            self._state = DisplayStateMachineState.INIT
+   
+
+        async def loop(self) -> None:
+            if self._state == DisplayStateMachineState.INIT:
+                print(f"VFDLineAnimator: Set text to: {self._text}")
+                self._anim = AnimationChain(links=self._links_animation, text=self._text, max_text_width=20)
+                await self._anim.Start()
+                self._next_update_after = datetime.now()
+                self._state = DisplayStateMachineState.ANIMATING
+
+            if self._next_update_after < datetime.now():
+                if self._state == DisplayStateMachineState.ANIMATING:
+                    if (await self._anim.Next()):
+                        # onFinished callback just changes the state to DELAY_START
+                        if self._state == DisplayStateMachineState.DELAY_START:
+                            pass
+                        else:
+                            self._vfd.set_position(0, self._line)
+                            text = await self._anim.GetText()
+                            #self._logger.debug(f"Updating title line to: {text}")
+                            self._vfd.write_bytes(text.encode('ascii'))
+                            self._next_update_after = datetime.now() + timedelta(milliseconds=100)
+                    else:
+                        if len(self._text) > self._anim.max_text_width:
+                            await self._anim.Start() # restart the animation
+                            self._next_update_after = datetime.now() + timedelta(seconds=1)
+                elif self._state == DisplayStateMachineState.DELAY_START:
+                    self._state = DisplayStateMachineState.ANIMATING
+            
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.set_brightness(0)
+        self.normal_display_mode()
+        self._title_animator = self.VFDLineAnimator(self, 0)
+        self._artist_animator = self.VFDLineAnimator(self, 1)
+
+    async def loop(self) -> None:
+        while self._running:
+            if self._stateTitle == DisplayStateMachineState.TEXT_UPDATED:
+                #self._logger.debug(f"Title updated to: {self.title}")
+                self._title_animator.set_text(self.title)
+                self._stateTitle = DisplayStateMachineState.ANIMATING
+            if self._stateArtist == DisplayStateMachineState.TEXT_UPDATED:
+                #self._logger.debug(f"Artist updated to: {self.artist}")
+                self._artist_animator.set_text(self.artist)
+                self._stateArtist = DisplayStateMachineState.ANIMATING
+            await self._title_animator.loop()
+            await self._artist_animator.loop()
             await asyncio.sleep(0.010)

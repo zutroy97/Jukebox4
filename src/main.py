@@ -8,7 +8,7 @@ import asyncio
 #from jukebox.displays.console.random_typewriter import RandomTypewriter as ConsoleRandomTypewriter
 from jukebox.displays.LED_16_segment.segment_alien_intro_active_segment_only_display import SegmentAlienIntroActiveSegmentOnlyDisplay
 from jukebox.displays.LED_16_segment.segment_simple import SegmentSimple
-from jukebox.displays.VFD.vfd_base import VFDBase, VFDSimple
+from jukebox.displays.VFD.vfd_base import VFDBase, VFDSimple, VFDTest
 from jukebox.displays.console.random_typewriter import DisplayConsoleRandomTypewriter
 from jukebox.displays.console.simple import Simple as ConsoleSimple
 from jukebox.displays.LED_16_segment.segment_scroller import SegmentScroller    
@@ -40,7 +40,8 @@ async def main():
     display = SegmentAlienIntroActiveSegmentOnlyDisplay(segment_delay_ticks=5)
     subject.add_observer(display)
 
-    vfd_display = VFDSimple(port='/dev/serial0', baud=9600)
+    #vfd_display = VFDSimple(port='/dev/serial0', baud=9600)
+    vfd_display = VFDTest(port='/dev/serial0', baud=9600)
     subject.add_observer(vfd_display)
     
     #display = DisplayConsoleRandomTypewriter(max_text_width=12)
