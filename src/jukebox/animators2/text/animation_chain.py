@@ -68,37 +68,3 @@ class AnimationChain(TextAnimatorBase):
             self._animators.append(anim)
             await self._initialiazeAnimations(index+1)
         return
-
-
-# from time import sleep
-# from multiline_generator import MultiLineGenerator
-# from random_typewriter import RandomTypeWriter
-# from slide import Slide
-
-# async def main():
-#     async def on_multiline_finished(anim: TextAnimatorBase) -> bool:
-#         print("MultiLineGenerator finished!")
-#         await asyncio.sleep(1) # wait a bit before starting the next animation
-#         return True
-
-#     async def on_random_typewriter_finished(anim: TextAnimatorBase) -> bool:
-#         print("Slide finished!")
-#         await asyncio.sleep(1) # wait a bit before starting the next animation
-#         return True
-
-#     links = [
-#         # AnimationChainLink(MultiLineGenerator, onFinished=on_multiline_finished),
-#         AnimationChainLink(MultiLineGenerator),
-#         AnimationChainLink(Slide, onFinished=on_random_typewriter_finished),
-#     ]
-
-#     anim = AnimationChain(links=links, text="Hello there! My name is Slim Shady.", max_text_width=12)
-#     await anim.Start()
-#     while await anim.Next():
-#         print(await anim.GetText())
-#         await asyncio.sleep(0.1)
-
-#     print('-' * anim.max_text_width)
-
-# if __name__ == "__main__":
-#     asyncio.run(main())        

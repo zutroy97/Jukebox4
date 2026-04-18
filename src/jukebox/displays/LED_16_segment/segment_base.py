@@ -1,8 +1,14 @@
+import asyncio
 import logging
+
 from busio import I2C
 import board
 from adafruit_ht16k33 import segments
+from jukebox.animators2.led16.animator_base import Led16AlienIntro, Led16AnimatorBase, Led16StaticText
+from jukebox.animators2.text.animator_base import TextAnimatorBase
+from jukebox.displays.common.common_enums import DisplayStateMachineState
 from jukebox.displays.common.display_base import DisplayBase
+from typing import List, Tuple, Type, Union
 
 class SegmentBase(DisplayBase):
     def __init__(
@@ -17,11 +23,182 @@ class SegmentBase(DisplayBase):
         self._display12 = segments.Seg14x4(i2c, address=addr_lower)
         self._display8.brightness = 0.20
         self._display12.brightness = 0.20
+        self._running = True
     
-    def clear_screen(self) -> None:
+    async def clear_screen(self) -> None:
         self._display8.fill(0)
         self._display12.fill(0)
 
     def _updateDisplay(self) -> None:
-        self._display8.print(f"{self.artist:<8}")
-        self._display12.print(f"{self.title:<12}")
+        self._display8.print(f"{self.artist[:8]:<8}")
+        self._display12.print(f"{self.title[:12]:<12}")
+
+    def print8(self, text: str) -> None:
+        self._display8.print(f"{text[:8]:<8}")
+
+    def print12(self, text: str) -> None:
+        self._display12.print(f"{text[:12]:<12}")
+
+    def write_raw8(self,index: int, bitmask: Union[int, List[int], Tuple[int, int]] ) -> None:
+        self._display8.set_digit_raw(index, bitmask)
+
+    def write_raw12(self,index: int, bitmask: Union[int, List[int], Tuple[int, int]] ) -> None:
+        self._display12.set_digit_raw(index, bitmask)
+
+    def set_brightness(self, brightness: float) -> None:
+        brightness = max(0.0, min(1.0, brightness))
+        self._display8.brightness = brightness
+        self._display12.brightness = brightness
+
+class SegmentStaticText(SegmentBase):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._title_animator : Led16AnimatorBase
+        self._artist_animator: Led16AnimatorBase 
+
+    async def loop(self) -> None:
+        while self._running:
+            if self._stateTitle ==DisplayStateMachineState.TEXT_UPDATED:
+                self._title_animator = Led16StaticText(text=self.title, max_text_width=12)
+                await self._title_animator.Start()
+                self._stateTitle = DisplayStateMachineState.ANIMATING
+                self.print12(self.title)
+
+            if self._stateArtist == DisplayStateMachineState.TEXT_UPDATED:
+                self._artist_animator = Led16StaticText(text=self.artist, max_text_width=8)
+                await self._artist_animator.Start()
+                self._stateArtist = DisplayStateMachineState.ANIMATING
+                self.print8(self.artist)
+            await asyncio.sleep(0.1)
+
+
+from jukebox.displays.LED_16_segment.segment_base import SegmentBase
+from jukebox.displays.common.common_enums import DisplayStateMachineState
+from datetime import datetime, timedelta
+from enum import Enum
+from jukebox.animators2.text.multiline_generator import MultiLineGenerator
+
+class SegmentMultiLine(SegmentBase):
+    class AnimationState(Enum):
+        IDLE = 0
+        """Not doing anything."""
+        INIT = 1
+        """Initializing display with new text."""
+        ANIMATING = 2
+        """Main loop for display updates."""
+        TEXT_UPDATED = 3 
+        """Text has been updated and needs to be redrawn."""
+        BEGIN_ANIMATION = 4
+        """Start any animations."""
+        EMPTY = 5
+        """No text to display."""
+        FINISHED = 6
+        """Finished displaying text (and any animation)."""
+        END_ANIMATION = 7
+        """Animation finished, waiting for next update or text change."""
+        DELAY = 8
+        """Waiting for a delay to pass before starting next animation."""
+        DELAY_START = 9
+        RESTART_DELAY = 10
+        """Waiting for a delay to pass before restarting current animation"""
+
+    class SegmentLineAnimator():
+        async def on_line_animated(self) -> bool:
+            #await asyncio.sleep(1) # wait for the line to be fully displayed before starting the timer
+            self._next_update_after = datetime.now() + timedelta(seconds=2) # display each line for 5 seconds
+            self._state = SegmentMultiLine.AnimationState.DELAY_START
+            return True
+
+        def __init__(self, display: segments.Seg14x4):
+            self._next_update_after : datetime = datetime.now() + timedelta(days=3600)
+            self._display = display
+            self._max_text_width = len(display.i2c_device) * 4
+            self._lineGenerator : MultiLineGenerator = MultiLineGenerator(text='', max_text_width=self._max_text_width) 
+            self._anim_type : Type[Led16AnimatorBase] = Led16AlienIntro
+            self._anim : Led16AnimatorBase 
+            self._state = SegmentMultiLine.AnimationState.IDLE
+            self._text = ""
+            self._logger = logging.getLogger(f"{__class__.__name__}_{id(self)}")
+        
+        def set_text(self, text: str) -> None:
+            self._text = text
+            self._state = SegmentMultiLine.AnimationState.INIT
+            self._next_update_after = datetime.now() - timedelta(seconds=1)
+   
+        def set_animator(self, anim_type: Type[Led16AnimatorBase]) -> None:
+            self._anim_type = anim_type
+
+        async def setup_multiline(self) -> None:
+            self._lineGenerator = MultiLineGenerator(text=self._text, max_text_width=self._max_text_width) 
+            await self._lineGenerator.Start()
+
+        async def setup_animation(self) -> None:
+            if not await self._lineGenerator.Next():
+                await self.setup_multiline()
+            t = await self._lineGenerator.GetText()
+            self._anim = self._anim_type(text=t, max_text_width=self._max_text_width)
+            await self._anim.Start()
+
+        async def loop(self) -> None:
+            if self._next_update_after < datetime.now():
+                if self._state == SegmentMultiLine.AnimationState.INIT:
+                    await self.setup_multiline()
+                    await self.setup_animation()
+                    self._next_update_after = datetime.now() - timedelta(seconds=2)
+                    self._state = SegmentMultiLine.AnimationState.ANIMATING
+
+                elif self._state == SegmentMultiLine.AnimationState.ANIMATING:
+                    #print(f"Checking if animation has next frame for text: {self._text}")
+                    if (await self._anim.Next()):
+                        # onFinished callback just changes the state to DELAY_START
+                        if self._state == SegmentMultiLine.AnimationState.DELAY_START:
+                            pass
+                        else:
+                            bitmasks = await self._anim.GetSegments()
+                            #print(f"Updating display with bitmasks: {bitmasks}")
+                            self._display.fill(0) # clear the display before writing the new frame
+                            for i, bitmask in enumerate(bitmasks):
+                                if i > self._max_text_width:
+                                    break
+                                #print(f"Setting digit {i} to bitmask {bitmask}")
+                                self._display.set_digit_raw(i, bitmask)
+                            self._next_update_after = datetime.now() + timedelta(milliseconds=100)
+                    else:
+                        # await self.on_line_animated()
+                        # # onFinished callback can change the state to DELAY_START
+                        # if self._state == DisplayStateMachineState.DELAY_START:
+                        #     self._logger.debug("Animation finished, transitioning to DELAY_START")
+                        #     return
+                        if await self._lineGenerator.Next():
+                            await self.setup_animation()
+                            self._next_update_after = datetime.now() + timedelta(seconds=2)
+                            self._state = SegmentMultiLine.AnimationState.ANIMATING
+                        elif len(self._text) <= self._anim.max_text_width:
+                            pass
+                        else:
+                            await self.setup_multiline() # restart the animation
+                            self._next_update_after = datetime.now() + timedelta(seconds=1)
+                elif self._state == SegmentMultiLine.AnimationState.DELAY_START:
+                    self._logger.debug("Transitioning to ANIMATING")
+
+                    self._state = SegmentMultiLine.AnimationState.ANIMATING
+            
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.set_brightness(.1)
+        self._title_animator = self.SegmentLineAnimator(self._display12)
+        self._artist_animator = self.SegmentLineAnimator(self._display8)
+
+    async def loop(self) -> None:
+        while self._running:
+            if self._stateTitle == DisplayStateMachineState.TEXT_UPDATED:
+                self._title_animator.set_text(self.title)
+                self._stateTitle = DisplayStateMachineState.ANIMATING
+            if self._stateArtist == DisplayStateMachineState.TEXT_UPDATED:
+                self._artist_animator.set_text(self.artist)
+                self._stateArtist = DisplayStateMachineState.ANIMATING
+            await self._title_animator.loop()
+            await self._artist_animator.loop()
+            await asyncio.sleep(0.010)
+

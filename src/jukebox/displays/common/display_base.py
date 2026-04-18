@@ -18,7 +18,7 @@ class DisplayBase(ABC):
         self._moveNextDisplayStart : bool = False
         self._title :str = ""
         self._artist: str  = ""
-        self._running : bool = False
+        self._running : bool = True
         self._ticks : uint64 = uint64(0)
         '''Current time in ms, used for timing the display updates. Should be updated by the DisplayCoordinator on each tick.'''
 
@@ -61,7 +61,6 @@ class DisplayBase(ABC):
         self._ticks.value += 10
         #self._updateDisplay()
 
-    @abstractmethod
     def _updateDisplay(self) -> None:
         '''Subclasses can implement this method to update the display with new text'''
         pass

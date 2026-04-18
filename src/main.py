@@ -5,14 +5,9 @@ from jukebox.coordinator.display_coordinator import DisplayCoordinator
 # import board
 import asyncio
 
-#from jukebox.displays.console.random_typewriter import RandomTypewriter as ConsoleRandomTypewriter
-from jukebox.displays.LED_16_segment.segment_alien_intro_active_segment_only_display import SegmentAlienIntroActiveSegmentOnlyDisplay
-from jukebox.displays.LED_16_segment.segment_simple import SegmentSimple
-from jukebox.displays.VFD.vfd_base import VFDBase, VFDSimple, VFDTest
-from jukebox.displays.console.random_typewriter import DisplayConsoleRandomTypewriter
-from jukebox.displays.console.simple import Simple as ConsoleSimple
-from jukebox.displays.LED_16_segment.segment_scroller import SegmentScroller    
-
+#from jukebox.displays.LED_16_segment.segment_alien_intro_active_segment_only_display import SegmentAlienIntroActiveSegmentOnlyDisplay
+from jukebox.displays.LED_16_segment.segment_base import SegmentMultiLine, SegmentStaticText
+from jukebox.displays.VFD.vfd_multiline import VFDMultiLine
 
 
 async def wait_and_stop(coor: DisplayCoordinator, delay: float) -> None:
@@ -37,11 +32,11 @@ async def main():
     logging.basicConfig(level=logging.DEBUG)
     subject = DisplayCoordinator()
 
-    display = SegmentAlienIntroActiveSegmentOnlyDisplay(segment_delay_ticks=5)
+    display = SegmentMultiLine()
+    #display = SegmentAlienIntroActiveSegmentOnlyDisplay()
     subject.add_observer(display)
 
-    #vfd_display = VFDSimple(port='/dev/serial0', baud=9600)
-    vfd_display = VFDTest(port='/dev/serial0', baud=9600)
+    vfd_display = VFDMultiLine(port='/dev/serial0', baud=9600)
     subject.add_observer(vfd_display)
     
     #display = DisplayConsoleRandomTypewriter(max_text_width=12)
@@ -58,6 +53,9 @@ async def main():
         vfdLoop = tg.create_task(
             vfd_display.loop()
         )
+        segLoop = tg.create_task(
+            display.loop()
+        )        
         taskStop = tg.create_task(
             wait_and_stop(subject, 8)   
         )

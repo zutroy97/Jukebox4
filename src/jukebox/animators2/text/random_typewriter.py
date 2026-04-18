@@ -22,7 +22,7 @@ class RandomTypeWriter(TextAnimatorBase):
         '''Returns the text to be displayed'''
         x = self._character_queue.pop(0)
         self._frameBuffer[x] = self.text[x]
-        return ''.join(self._frameBuffer)
+        return ''.join(self._frameBuffer).ljust(self.max_text_width)
 
 async def main():    
     anim = RandomTypeWriter(text="This is a test. This animation should display the text one character at a time, in a random order."
