@@ -8,7 +8,7 @@ from jukebox.animators2.led16.animator_base import Led16AlienIntro, Led16Animato
 from jukebox.animators2.text.animator_base import TextAnimatorBase
 from jukebox.displays.common.common_enums import DisplayStateMachineState
 from jukebox.displays.common.display_base import DisplayBase
-from typing import Awaitable, Callable, List, Tuple, Type, Union
+from typing import Awaitable, Callable, List, Optional, Tuple, Type, Union
 
 class SegmentBase(DisplayBase):
     def __init__(
@@ -86,11 +86,26 @@ class SegmentMultiLine(SegmentBase):
         """Initializing display with new text."""
         ANIMATING = 2
         """Main loop for display updates."""
-        ANIMATED_LINE_CALLBACK = 3
+        ON_ANIMATED_LINE_COMPLETE_CALLBACK = 3
         """Callback after a line has been fully animated, waiting for the callback to return true before animating the next line.""" 
+        ON_TEXT_CHANGED_CALLBACK = 4
+        """Callback after the text has been fully changed, waiting for the callback to return true before starting to animate the new text."""
         DELAY = 8
         """Waiting for a delay to pass before starting next animation."""
         DELAY_START = 9
+
+    class NonBlockingDelay():
+        def __init__(self, delay_seconds: float):
+            self._delay_seconds = delay_seconds
+            self._next_update_time : Optional[datetime] = None
+
+        async def isDelayFinished(self, anim: Led16AnimatorBase) -> bool:
+            if self._next_update_time is None:
+                self._next_update_time = datetime.now() + timedelta(seconds=self._delay_seconds)
+            if self._next_update_time < datetime.now():
+                self._next_update_time = None
+                return True
+            return False
 
     class SegmentLineAnimator():
         async def on_line_animated(self) -> bool:
@@ -110,10 +125,13 @@ class SegmentMultiLine(SegmentBase):
             self._text = ""
             self._logger = logging.getLogger(f"{__class__.__name__}_{id(self)}")
             self._on_line_animated_callback : Callable[[Led16AnimatorBase], Awaitable[bool]] = self._default_on_line_animated_callback
+            self._on_text_changed_callback : Callable[[Led16AnimatorBase | None, str], Awaitable[bool]] = self._default_on_text_changed_callback
         
+        async def _default_on_text_changed_callback(self, anim: Led16AnimatorBase | None, text: str) -> bool:
+            #print(f"_default_on_text_changed_callback NewText: {text}")
+            return True 
+
         async def _default_on_line_animated_callback(self, anim: Led16AnimatorBase) -> bool:
-            print(f"_default_on_line_animated_callback finished for animation: {anim.__class__.__name__} {anim.text}")
-            await asyncio.sleep(2) # wait for the line to be fully displayed before starting the timer
             return True 
         
         def on_line_animated_callback(self, callback: Callable[[Led16AnimatorBase], Awaitable[bool]]) -> None:
@@ -121,41 +139,48 @@ class SegmentMultiLine(SegmentBase):
 
         def set_text(self, text: str) -> None:
             self._text = text
-            self._state = SegmentMultiLine.AnimationState.INIT
-            self._next_update_after = datetime.now() - timedelta(seconds=1)
+            self._state = SegmentMultiLine.AnimationState.ON_TEXT_CHANGED_CALLBACK
    
         def set_animator(self, anim_type: Type[Led16AnimatorBase]) -> None:
             self._anim_type = anim_type
 
-        async def setup_multiline(self) -> None:
+        async def _setup_multiline(self) -> None:
             self._lineGenerator = MultiLineGenerator(text=self._text, max_text_width=self._max_text_width) 
             await self._lineGenerator.Start()
 
-        async def setup_animation(self) -> None:
+        async def _setup_animation(self) -> None:
             if not await self._lineGenerator.Next():
-                await self.setup_multiline()
+                await self._setup_multiline()
             t = await self._lineGenerator.GetText()
             self._anim = self._anim_type(text=t, max_text_width=self._max_text_width)
             await self._anim.Start()
 
         async def loop(self) -> None:
+            if self._state == SegmentMultiLine.AnimationState.ON_TEXT_CHANGED_CALLBACK:
+                anim = self._anim if hasattr(self, '_anim') else None
+                if not await self._on_text_changed_callback(anim, self._text):
+                    return
+                self._state = SegmentMultiLine.AnimationState.INIT
+                self._next_update_after = datetime.now() - timedelta(seconds=1) # start the animation immediately after the text is changed, so set the next update time to the past
+                
             if self._next_update_after < datetime.now():
                 if self._state == SegmentMultiLine.AnimationState.INIT:
-                    await self.setup_multiline()
-                    await self.setup_animation()
+                    await self._setup_multiline()
+                    await self._setup_animation()
                     self._state = SegmentMultiLine.AnimationState.ANIMATING
+
                 
-                elif self._state == SegmentMultiLine.AnimationState.ANIMATED_LINE_CALLBACK:
+                elif self._state == SegmentMultiLine.AnimationState.ON_ANIMATED_LINE_COMPLETE_CALLBACK:
                     if not await self._on_line_animated_callback(self._anim):
                         return
                     if await self._lineGenerator.Next():
-                        await self.setup_animation()
+                        await self._setup_animation()
                         self._state = SegmentMultiLine.AnimationState.ANIMATING
                     elif len(self._text) <= self._anim.max_text_width:
                         self._state = SegmentMultiLine.AnimationState.IDLE
                         return # no more lines to animate and the text fits on one line, so we're done
                     else:
-                        await self.setup_animation() # restart the animation
+                        await self._setup_animation() # restart the animation
                         self._state = SegmentMultiLine.AnimationState.ANIMATING
                 
                 elif self._state == SegmentMultiLine.AnimationState.ANIMATING:
@@ -171,7 +196,7 @@ class SegmentMultiLine(SegmentBase):
                             self._display.set_digit_raw(i, bitmask)
                         self._next_update_after = datetime.now() + timedelta(milliseconds=100)
                     else:
-                        self._state = SegmentMultiLine.AnimationState.ANIMATED_LINE_CALLBACK
+                        self._state = SegmentMultiLine.AnimationState.ON_ANIMATED_LINE_COMPLETE_CALLBACK
                         return
 
                 elif self._state == SegmentMultiLine.AnimationState.DELAY_START:
@@ -184,17 +209,24 @@ class SegmentMultiLine(SegmentBase):
         super().__init__(**kwargs)
         self.set_brightness(.1)
         self._title_animator = self.SegmentLineAnimator(self._display12)
+        _title_line_animated_callback = self.NonBlockingDelay(2)
+        self._title_animator.on_line_animated_callback(_title_line_animated_callback.isDelayFinished)
+        
         self._artist_animator = self.SegmentLineAnimator(self._display8)
+        _artist_line_animated_callback = self.NonBlockingDelay(2)
+        self._artist_animator.on_line_animated_callback(_artist_line_animated_callback.isDelayFinished)
+
 
     async def loop(self) -> None:
         while self._running:
             if self._stateTitle == DisplayStateMachineState.TEXT_UPDATED:
                 self._title_animator.set_text(self.title)
                 self._stateTitle = DisplayStateMachineState.ANIMATING
+            await self._title_animator.loop()
             if self._stateArtist == DisplayStateMachineState.TEXT_UPDATED:
                 self._artist_animator.set_text(self.artist)
                 self._stateArtist = DisplayStateMachineState.ANIMATING
-            await self._title_animator.loop()
             await self._artist_animator.loop()
+            
             await asyncio.sleep(0.010)
 
