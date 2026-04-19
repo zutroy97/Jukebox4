@@ -8,7 +8,7 @@ from jukebox.animators2.led16.animator_base import Led16AlienIntro, Led16Animato
 from jukebox.animators2.text.animator_base import TextAnimatorBase
 from jukebox.displays.common.common_enums import DisplayStateMachineState
 from jukebox.displays.common.display_base import DisplayBase
-from typing import List, Tuple, Type, Union
+from typing import Awaitable, Callable, List, Tuple, Type, Union
 
 class SegmentBase(DisplayBase):
     def __init__(
@@ -86,21 +86,11 @@ class SegmentMultiLine(SegmentBase):
         """Initializing display with new text."""
         ANIMATING = 2
         """Main loop for display updates."""
-        TEXT_UPDATED = 3 
-        """Text has been updated and needs to be redrawn."""
-        BEGIN_ANIMATION = 4
-        """Start any animations."""
-        EMPTY = 5
-        """No text to display."""
-        FINISHED = 6
-        """Finished displaying text (and any animation)."""
-        END_ANIMATION = 7
-        """Animation finished, waiting for next update or text change."""
+        ANIMATED_LINE_CALLBACK = 3
+        """Callback after a line has been fully animated, waiting for the callback to return true before animating the next line.""" 
         DELAY = 8
         """Waiting for a delay to pass before starting next animation."""
         DELAY_START = 9
-        RESTART_DELAY = 10
-        """Waiting for a delay to pass before restarting current animation"""
 
     class SegmentLineAnimator():
         async def on_line_animated(self) -> bool:
@@ -119,7 +109,16 @@ class SegmentMultiLine(SegmentBase):
             self._state = SegmentMultiLine.AnimationState.IDLE
             self._text = ""
             self._logger = logging.getLogger(f"{__class__.__name__}_{id(self)}")
+            self._on_line_animated_callback : Callable[[Led16AnimatorBase], Awaitable[bool]] = self._default_on_line_animated_callback
         
+        async def _default_on_line_animated_callback(self, anim: Led16AnimatorBase) -> bool:
+            print(f"_default_on_line_animated_callback finished for animation: {anim.__class__.__name__} {anim.text}")
+            await asyncio.sleep(2) # wait for the line to be fully displayed before starting the timer
+            return True 
+        
+        def on_line_animated_callback(self, callback: Callable[[Led16AnimatorBase], Awaitable[bool]]) -> None:
+            self._on_line_animated_callback = callback
+
         def set_text(self, text: str) -> None:
             self._text = text
             self._state = SegmentMultiLine.AnimationState.INIT
@@ -144,40 +143,37 @@ class SegmentMultiLine(SegmentBase):
                 if self._state == SegmentMultiLine.AnimationState.INIT:
                     await self.setup_multiline()
                     await self.setup_animation()
-                    self._next_update_after = datetime.now() - timedelta(seconds=2)
                     self._state = SegmentMultiLine.AnimationState.ANIMATING
-
+                
+                elif self._state == SegmentMultiLine.AnimationState.ANIMATED_LINE_CALLBACK:
+                    if not await self._on_line_animated_callback(self._anim):
+                        return
+                    if await self._lineGenerator.Next():
+                        await self.setup_animation()
+                        self._state = SegmentMultiLine.AnimationState.ANIMATING
+                    elif len(self._text) <= self._anim.max_text_width:
+                        self._state = SegmentMultiLine.AnimationState.IDLE
+                        return # no more lines to animate and the text fits on one line, so we're done
+                    else:
+                        await self.setup_animation() # restart the animation
+                        self._state = SegmentMultiLine.AnimationState.ANIMATING
+                
                 elif self._state == SegmentMultiLine.AnimationState.ANIMATING:
                     #print(f"Checking if animation has next frame for text: {self._text}")
                     if (await self._anim.Next()):
-                        # onFinished callback just changes the state to DELAY_START
-                        if self._state == SegmentMultiLine.AnimationState.DELAY_START:
-                            pass
-                        else:
-                            bitmasks = await self._anim.GetSegments()
-                            #print(f"Updating display with bitmasks: {bitmasks}")
-                            self._display.fill(0) # clear the display before writing the new frame
-                            for i, bitmask in enumerate(bitmasks):
-                                if i > self._max_text_width:
-                                    break
-                                #print(f"Setting digit {i} to bitmask {bitmask}")
-                                self._display.set_digit_raw(i, bitmask)
-                            self._next_update_after = datetime.now() + timedelta(milliseconds=100)
+                        bitmasks = await self._anim.GetSegments()
+                        #print(f"Updating display with bitmasks: {bitmasks}")
+                        self._display.fill(0) # clear the display before writing the new frame
+                        for i, bitmask in enumerate(bitmasks):
+                            if i > self._max_text_width:
+                                break
+                            #print(f"Setting digit {i} to bitmask {bitmask}")
+                            self._display.set_digit_raw(i, bitmask)
+                        self._next_update_after = datetime.now() + timedelta(milliseconds=100)
                     else:
-                        # await self.on_line_animated()
-                        # # onFinished callback can change the state to DELAY_START
-                        # if self._state == DisplayStateMachineState.DELAY_START:
-                        #     self._logger.debug("Animation finished, transitioning to DELAY_START")
-                        #     return
-                        if await self._lineGenerator.Next():
-                            await self.setup_animation()
-                            self._next_update_after = datetime.now() + timedelta(seconds=2)
-                            self._state = SegmentMultiLine.AnimationState.ANIMATING
-                        elif len(self._text) <= self._anim.max_text_width:
-                            pass
-                        else:
-                            await self.setup_multiline() # restart the animation
-                            self._next_update_after = datetime.now() + timedelta(seconds=1)
+                        self._state = SegmentMultiLine.AnimationState.ANIMATED_LINE_CALLBACK
+                        return
+
                 elif self._state == SegmentMultiLine.AnimationState.DELAY_START:
                     self._logger.debug("Transitioning to ANIMATING")
 
