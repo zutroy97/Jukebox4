@@ -6,7 +6,8 @@ from jukebox.coordinator.display_coordinator import DisplayCoordinator
 import asyncio
 
 #from jukebox.displays.LED_16_segment.segment_alien_intro_active_segment_only_display import SegmentAlienIntroActiveSegmentOnlyDisplay
-from jukebox.displays.LED_16_segment.segment_base import SegmentMultiLine, SegmentStaticText
+from jukebox.displays.LED_16_segment.segment_multiline import SegmentMultiLine
+from jukebox.displays.LED_16_segment.segment_static_text import SegmentStaticText
 from jukebox.displays.VFD.vfd_multiline import VFDMultiLine
 
 

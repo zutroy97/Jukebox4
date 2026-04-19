@@ -12,6 +12,7 @@ from jukebox.animators2.text.animator_base import TextAnimatorBase
 from jukebox.animators2.text.multiline_generator import MultiLineGenerator
 
 class VFDMultiLine(VFDBase):
+    '''A VFD display that supports multiple lines of text with animations. Each line can have its own independent animation, and the display will automatically update when the text changes. The display will also automatically clear when the text is updated, and the new text will be animated in. The display will also support a callback function that is called when a line has been fully animated, allowing for custom behavior such as delaying before animating the next line. The display will also support a callback function that is called when the text has been fully changed, allowing for custom behavior such as delaying before starting to animate the new text.'''
     class VFDLineAnimator():
         async def _on_line_displayed(self, anim: TextAnimatorBase) -> bool:
             #await asyncio.sleep(1) # wait for the line to be fully displayed before starting the timer

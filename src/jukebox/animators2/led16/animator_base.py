@@ -16,6 +16,7 @@ class Led16AnimatorBase(ABC):
 
     @staticmethod
     def get_char_pattern(char: str) -> int:
+        '''Converts a character to a segment bitmask. The bitmask represents the segments that should be lit for the corresponding character. Characters that are not in the supported range (32-127) will be represented as blank (0).   The mapping is based on the adafruit_ht16k33 library's character mapping, which supports a subset of ASCII characters. The mapping does not currently support decimal points and commas, which are commonly used in 16-segment displays. '''
         if not 32 <= ord(char) <= 127:
             return 0
         # TODO: Handle decimal points and commas, which are not currently supported by this mapping
@@ -24,14 +25,17 @@ class Led16AnimatorBase(ABC):
     
     @staticmethod
     def string_to_char_mask(s: str) -> List[int]:
+        '''Converts a string to a list of segment bitmasks. Each bitmask represents the segments that should be lit for the corresponding character in the string.  Characters that are not in the supported range (32-127) will be represented as blank (0).   The mapping is based on the adafruit_ht16k33 library's character mapping, which supports a subset of ASCII characters. The mapping does not currently support decimal points and commas, which are commonly used in 16-segment displays.'''
         return [Led16AnimatorBase.get_char_pattern(ch) for ch in s]
 
     @property
     def max_text_width(self) -> int:
+        '''Returns the maximum text width that should be used for this animation.'''
         return self._max_text_width
     
     @property
     def text(self) -> str:
+        '''Returns the text to be displayed.'''
         return self._text
 
     @abstractmethod
@@ -48,29 +52,3 @@ class Led16AnimatorBase(ABC):
     async def Start(self) -> None:
         '''Start/Restarts the animation'''
         pass
-    
-class Led16StaticText(Led16AnimatorBase):
-    async def GetSegments(self) -> list[int]:
-        return self.string_to_char_mask(self.text)
-    
-    async def Next(self) -> bool:
-        return False
-    
-    async def Start(self) -> None:
-        pass
-
-class Led16AlienIntro(Led16AnimatorBase):
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.i = 0
-    async def GetSegments(self) -> list[int]:
-        #print(f"Getting segments for text: {self.text}")
-        return self.string_to_char_mask(self.text)
-    
-    async def Next(self) -> bool:
-        self.i += 1
-        return self.i == 1 # only one frame of animation, so return true on the first call and false thereafter
-    
-    async def Start(self) -> None:
-        self.i = 0
-        return
